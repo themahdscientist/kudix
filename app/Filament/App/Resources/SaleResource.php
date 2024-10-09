@@ -106,9 +106,9 @@ class SaleResource extends Resource
                             ->required()
                             ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                             ->afterStateUpdated(function (Forms\Set $set, $state) {
-                                $set('unit_cost', Product::query()->find($state, 'price')->price ?? null);
+                                $set('unit_price', Product::query()->find($state, 'price')->price ?? null);
                                 $set('quantity', null);
-                                $set('total_cost', null);
+                                $set('total_price', null);
                             })
                             ->createOptionForm([
                                 Forms\Components\Grid::make()
@@ -356,7 +356,7 @@ class SaleResource extends Resource
                                             ->columnSpanFull(),
                                     ]),
                             ]),
-                        Forms\Components\TextInput::make('unit_cost')
+                        Forms\Components\TextInput::make('unit_price')
                             ->numeric()
                             ->prefix('₦')
                             ->minValue(1)
@@ -369,15 +369,15 @@ class SaleResource extends Resource
                             ->maxValue(fn (Forms\Get $get): int => Product::query()->find($get('product_id'), 'quantity')->quantity)
                             ->validationMessages(['max' => 'The quantity has exceeded the available stock.'])
                             ->live(true)
-                            ->disabled(fn (Forms\Get $get): bool => ! $get('unit_cost'))
+                            ->disabled(fn (Forms\Get $get): bool => ! $get('unit_price'))
                             ->afterStateUpdated(function (Forms\Components\TextInput $component, Forms\Get $get, Forms\Set $set, $state) {
-                                if ($get('unit_cost')) {
-                                    $set('total_cost', $state * $get('unit_cost'));
+                                if ($get('unit_price')) {
+                                    $set('total_price', $state * $get('unit_price'));
 
-                                    $component->getContainer()->getComponent('atomic_total_cost')->callAfterStateUpdated();
+                                    $component->getContainer()->getComponent('atomic_total_price')->callAfterStateUpdated();
                                 }
                             }),
-                        Forms\Components\TextInput::make('total_cost')
+                        Forms\Components\TextInput::make('total_price')
                             ->numeric()
                             ->prefix('₦')
                             ->disabled()
@@ -387,13 +387,13 @@ class SaleResource extends Resource
                             ->afterStateUpdated(function (Forms\Components\TextInput $component, Forms\Set $set) {
                                 $total = 0;
                                 foreach ($component->getContainer()->getParentComponent()->getState() as $parent) {
-                                    $total += $parent['total_cost'];
+                                    $total += $parent['total_price'];
                                 }
 
-                                $set('../../total_cost', $total);
+                                $set('../../total_price', $total);
                             })
                             ->visibleOn('create')
-                            ->key('atomic_total_cost'),
+                            ->key('atomic_total_price'),
                     ])
                     ->collapsible()
                     ->itemLabel(fn (array $state): ?string => Product::query()->find($state['product_id'], 'name')->name ?? 'Cart Item')
@@ -404,17 +404,17 @@ class SaleResource extends Resource
                     ->options(function (Forms\Get $get) {
                         if ($get('payment_method') === \App\PaymentMethod::Cash->value) {
                             return [
-                                \App\SalePaymentStatus::Paid->value => \App\SalePaymentStatus::Paid->name,
+                                \App\PaymentStatus::Paid->value => \App\PaymentStatus::Paid->name,
                             ];
                         }
 
                         return [
-                            \App\SalePaymentStatus::Pending->value => \App\SalePaymentStatus::Pending->name,
-                            \App\SalePaymentStatus::Refunded->value => \App\SalePaymentStatus::Refunded->name,
+                            \App\PaymentStatus::Pending->value => \App\PaymentStatus::Pending->name,
+                            \App\PaymentStatus::Refunded->value => \App\PaymentStatus::Refunded->name,
                         ];
                     })
                     ->required(),
-                Forms\Components\TextInput::make('total_cost')
+                Forms\Components\TextInput::make('total_price')
                     ->numeric()
                     ->prefix('₦')
                     ->disabled()
@@ -443,22 +443,22 @@ class SaleResource extends Resource
                     ->label('Products sold')
                     ->sortable()
                     ->summarize(Summarizers\Sum::make()->numeric()->prefix('Products: ')),
-                Tables\Columns\TextColumn::make('total_cost')
+                Tables\Columns\TextColumn::make('total_price')
                     ->money('NGN')
                     ->sortable()
                     ->summarize(Summarizers\Summarizer::make()
                         ->money('NGN')
                         ->prefix('Total: ')
-                        ->using(fn (QueryBuilder $query): int => $query->sum('total_cost') / 100)),
+                        ->using(fn (QueryBuilder $query): int => $query->sum('total_price') / 100)),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Date')
                     ->sortable()
                     ->date()
                     ->summarize(Summarizers\Count::make()->numeric()->prefix('Sales: ')),
                 Tables\Columns\IconColumn::make('payment_status')
-                    ->icon(fn ($record): string => \App\SalePaymentStatus::from($record->payment_status)->getIcon())
-                    ->color(fn ($record): string => \App\SalePaymentStatus::from($record->payment_status)->getColor())
-                    ->tooltip(fn ($record): string => \App\SalePaymentStatus::from($record->payment_status)->getLabel()),
+                    ->icon(fn ($record): string => \App\PaymentStatus::from($record->payment_status)->getIcon())
+                    ->color(fn ($record): string => \App\PaymentStatus::from($record->payment_status)->getColor())
+                    ->tooltip(fn ($record): string => \App\PaymentStatus::from($record->payment_status)->getLabel()),
                 Tables\Columns\TextColumn::make('salesperson.name')
                     ->searchable(),
             ])
@@ -469,7 +469,7 @@ class SaleResource extends Resource
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                // 
+                //
             ]);
     }
 

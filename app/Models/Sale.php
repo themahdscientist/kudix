@@ -13,12 +13,21 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use function Illuminate\Events\queueable;
+
 #[ObservedBy([\App\Observers\PharmacyObserver::class])]
 #[ObservedBy(\App\Observers\SaleObserver::class)]
 #[ScopedBy([\App\Models\Scopes\PharmacyScope::class])]
 class Sale extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected static function booted()
+    {
+        static::deleting(queueable(fn (Sale $sale) => $sale->document()->delete()));
+        static::restoring(queueable(fn (Sale $sale) => $sale->document()->restore()));
+        static::forceDeleting(queueable(fn (Sale $sale) => $sale->document()->forceDelete()));
+    }
 
     public function newUniqueId(): string
     {
@@ -31,24 +40,19 @@ class Sale extends Model
             'discount' => Casts\PercentCast::class,
             'shipping' => Casts\MoneyCast::class,
             'tendered' => Casts\MoneyCast::class,
-            'total_cost' => Casts\MoneyCast::class,
+            'total_price' => Casts\MoneyCast::class,
             'vat' => Casts\PercentCast::class,
         ];
     }
 
-    public function customer(): BelongsTo
+    public function client(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Client::class);
     }
 
     public function document(): MorphOne
     {
         return $this->morphOne(Document::class, 'documentable');
-    }
-
-    public function invoice(): MorphOne
-    {
-        return $this->morphOne(Invoice::class, 'invoiceable');
     }
 
     public function productSales(): HasMany
@@ -58,11 +62,11 @@ class Sale extends Model
 
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class)->withPivot(['quantity', 'unit_cost']);
+        return $this->belongsToMany(Product::class)->withPivot(['quantity', 'unit_price']);
     }
 
-    public function salesperson(): BelongsTo
+    public function cashier(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'salesperson_id');
+        return $this->belongsTo(User::class, 'cashier_id');
     }
 }

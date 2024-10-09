@@ -10,7 +10,7 @@ class SaleObserver implements ShouldHandleEventsAfterCommit
     public function created(Sale $sale): void
     {
         if (filament()->auth()->check()) {
-            $sale->salesperson_id = filament()->auth()->id();
+            $sale->cashier_id = filament()->auth()->id();
             $sale->saveQuietly();
         }
     }

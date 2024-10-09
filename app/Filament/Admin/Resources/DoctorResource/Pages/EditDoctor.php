@@ -3,8 +3,8 @@
 namespace App\Filament\Admin\Resources\DoctorResource\Pages;
 
 use App\Filament\Admin\Resources\DoctorResource;
+use App\Filament\Resources\Pages\EditRecord;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
 
 class EditDoctor extends EditRecord
 {

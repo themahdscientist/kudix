@@ -2,18 +2,22 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasAvatar;
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
+use Jeffgreco13\FilamentBreezy\Traits\TwoFactorAuthenticatable;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, HasAvatar//, MustVerifyEmail
 {
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -24,7 +28,6 @@ class User extends Authenticatable implements FilamentUser
         'name',
         'email',
         'password',
-        'is_admin',
     ];
 
     /**
@@ -45,35 +48,75 @@ class User extends Authenticatable implements FilamentUser
     protected function casts(): array
     {
         return [
-            'is_admin' => 'boolean',
+            'is_subscribed' => 'boolean',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
 
-    public function salespeople(): HasMany
+    public function cashiers(): HasMany
     {
-        return $this->hasMany(Salesperson::class);
+        return $this->hasMany(Cashier::class);
+    }
+
+    public function client(): HasOne
+    {
+        return $this->hasOne(Client::class);
+    }
+
+    public function clients(): HasMany
+    {
+        return $this->hasMany(Client::class);
+    }
+
+    public function doctors(): HasMany
+    {
+        return $this->hasMany(Doctor::class);
+    }
+
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function setting(): HasOne
+    {
+        return $this->hasOne(Setting::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role_id == Role::ADMIN;
     }
 
     public function canAccessPanel(\Filament\Panel $panel): bool
     {
         switch ($panel->getId()) {
             case 'admin':
-                return $this->is_admin;
+                if (! $this->hasVerifiedEmail()) {
+                    return $this->isAdmin();
+                }
+
+                return $this->isAdmin() && $this->hasVerifiedEmail();
+            case 'app':
+                return ! $this->isAdmin();
+
             default:
-                return ! $this->is_admin;
+                return false;
         }
     }
 
-    // ! Production code ty shii
-    // public function canAccessPanel(Panel $panel): bool
-    // {
-    //     if ($panel->getId() === 'admin') {
-    //         return $this->is_admin && $this->hasVerifiedEmail();
-    //         return str_ends_with($this->email, '@yourdomain.com') && $this->hasVerifiedEmail();
-    //     }
+    public function getFilamentAvatarUrl(): ?string
+    {
+        return $this->setting->company_logo ? Storage::url('logos/'.$this->setting->company_logo) : null;
+    }
 
-    //     return true;
-    // }
+    public function isOnBoarded(): bool
+    {
+        if (! $this->setting->company_logo) {
+            return false;
+        }
+
+        return true;
+    }
 }

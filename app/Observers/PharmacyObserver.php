@@ -10,7 +10,7 @@ class PharmacyObserver implements ShouldHandleEventsAfterCommit
     public function created(Model $model): void
     {
         if (filament()->auth()->check()) {
-            if (filament()->auth()->user()->is_admin) {
+            if (filament()->auth()->user()->isAdmin()) {
                 $model->user_id = filament()->auth()->id();
                 $model->saveQuietly();
             } else {

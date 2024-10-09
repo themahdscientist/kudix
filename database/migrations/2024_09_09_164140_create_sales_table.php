@@ -13,23 +13,24 @@ return new class extends Migration
     {
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('client_id')->nullable()->constrained('users')->nullOnDelete();
             $table->float('discount')->default(0.00);
             $table->text('notes')->nullable();
             $table->enum('payment_method', [
-                'cash',
                 'card',
+                'cash',
                 'wire transfer',
             ])->default('cash');
             $table->enum('payment_status', [
-                'pending',
+                'overdue',
                 'paid',
+                'pending',
                 'refunded',
             ])->default('paid');
-            $table->foreignId('salesperson_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('cashier_id')->nullable()->constrained('users')->nullOnDelete();
             $table->unsignedInteger('shipping')->default(0);
             $table->unsignedInteger('tendered')->default(0);
-            $table->unsignedInteger('total_cost')->default(0);
+            $table->unsignedInteger('total_price')->default(0);
             $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('uuid')->unique();
             $table->float('vat')->default(0.00);

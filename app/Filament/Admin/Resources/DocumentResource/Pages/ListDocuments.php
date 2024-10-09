@@ -23,13 +23,13 @@ class ListDocuments extends ListRecords
     {
         return [
             'invoices' => Tab::make()
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('type', 'invoice'))
-                ->badge(\App\Models\Document::query()->where('type', 'invoice')->count())
-                ->icon('heroicon-s-document-text'),
-                'receipts' => Tab::make()
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('type', 'receipt'))
-                ->badge(\App\Models\Document::query()->where('type', 'receipt')->count())
-                ->icon('heroicon-s-receipt-percent'),
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('type', \App\DocumentType::Invoice->value))
+                ->icon('heroicon-s-document-text')
+                ->badge(fn () => static::getResource()::getEloquentQuery()->where('type', \App\DocumentType::Invoice->value)->count()),
+            'receipts' => Tab::make()
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('type', \App\DocumentType::Receipt->value))
+                ->icon('heroicon-s-receipt-percent')
+                ->badge(fn () => static::getResource()::getEloquentQuery()->where('type', \App\DocumentType::Receipt->value)->count()),
         ];
     }
 

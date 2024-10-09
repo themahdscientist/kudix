@@ -8,6 +8,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Support\Assets\Css;
 use Filament\Support\Colors\Color;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -50,11 +51,19 @@ class AppPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->assets([
+                Css::make('app-indicator', resource_path('css/app-indicator.css')),
+            ])
             ->authMiddleware([
                 Authenticate::class,
             ])
             ->spa()
+            ->spaUrlExceptions([
+                url('/admin/login'),
+                url('/admin/register'),
+            ])
             ->unsavedChangesAlerts()
-            ->databaseTransactions();
+            ->databaseTransactions()
+            ->favicon(asset('favicon.ico'));
     }
 }

@@ -22,12 +22,17 @@ class ListSales extends ListRecords
     public function getTabs(): array
     {
         return [
-            'all' => Tab::make(),
+            'all' => Tab::make()
+                ->icon('heroicon-s-sparkles')
+                ->badge(fn () => static::getResource()::getModel()::count()),
             'today' => Tab::make()
                 ->modifyQueryUsing(fn (Builder $query) => $query->whereDate('created_at', now()))
-                ->badge(\App\Models\Sale::query()->whereDate('created_at', now())->count()),
+                ->icon('heroicon-s-calendar')
+                ->badge(fn () => static::getResource()::getEloquentQuery()->whereDate('created_at', now())->count()),
             'yesterday' => Tab::make()
-                ->modifyQueryUsing(fn (Builder $query) => $query->whereDate('created_at', now()->subDay())),
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereDate('created_at', now()->subDay()))
+                ->icon('heroicon-s-clock')
+                ->badge(fn () => static::getResource()::getEloquentQuery()->whereDate('created_at', now()->subDay())->count()),
         ];
     }
 

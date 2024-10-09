@@ -13,11 +13,21 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use function Illuminate\Events\queueable;
+
 #[ObservedBy([\App\Observers\PharmacyObserver::class])]
+#[ObservedBy([\App\Observers\InventoryObserver::class])]
 #[ScopedBy([\App\Models\Scopes\PharmacyScope::class])]
 class Purchase extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected static function booted()
+    {
+        static::deleting(queueable(fn (Purchase $purchase) => $purchase->document()->delete()));
+        static::restoring(queueable(fn (Purchase $purchase) => $purchase->document()->restore()));
+        static::forceDeleting(queueable(fn (Purchase $purchase) => $purchase->document()->forceDelete()));
+    }
 
     public function newUniqueId(): string
     {
@@ -32,7 +42,7 @@ class Purchase extends Model
             'received_date' => 'datetime',
             'shipping' => Casts\MoneyCast::class,
             'tendered' => Casts\MoneyCast::class,
-            'total_price' => Casts\MoneyCast::class,
+            'total_cost' => Casts\MoneyCast::class,
             'vat' => Casts\PercentCast::class,
         ];
     }
@@ -42,11 +52,6 @@ class Purchase extends Model
         return $this->morphOne(Document::class, 'documentable');
     }
 
-    public function invoice(): MorphOne
-    {
-        return $this->morphOne(Invoice::class, 'invoiceable');
-    }
-
     public function productPurchases(): HasMany
     {
         return $this->hasMany(ProductPurchase::class);
@@ -54,7 +59,7 @@ class Purchase extends Model
 
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class)->withPivot(['quantity', 'unit_price']);
+        return $this->belongsToMany(Product::class)->withPivot(['quantity', 'unit_cost']);
     }
 
     public function supplier(): BelongsTo

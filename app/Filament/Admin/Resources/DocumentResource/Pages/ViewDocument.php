@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\MaxWidth;
 
 class ViewDocument extends ViewRecord
@@ -37,7 +38,7 @@ class ViewDocument extends ViewRecord
                     ->icon('heroicon-o-credit-card')
                     ->hidden(function (Document $record) {
                         return $record->amount_paid === $record->amount
-                        || $record->payment_status === \App\PurchasePaymentStatus::Paid->value;
+                        || $record->payment_status === \App\PaymentStatus::Paid->value;
                     })
                     ->fillForm(fn (Document $record) => [
                         'amount' => $record->amount,
@@ -67,31 +68,32 @@ class ViewDocument extends ViewRecord
 
                         if ($record->amount_paid === $record->amount) {
                             $record->update([
-                                'payment_status' => \App\PurchasePaymentStatus::Paid->value,
+                                'payment_status' => \App\PaymentStatus::Paid->value,
                                 'payment_date' => now(),
+                                'type' => \App\DocumentType::Receipt->value,
                             ]);
                             $record->documentable->update([
-                                'payment_status' => \App\SalePaymentStatus::Paid->value,
+                                'payment_status' => \App\PaymentStatus::Paid->value,
                             ]);
 
                             Notification::make('cleared')
-                                ->title('Invoice cleared')
-                                ->body('The invoice has been paid out.')
+                                ->title('Cleared')
+                                ->body('The invoice has been cleared out and a receipt was issued.')
                                 ->success()
                                 ->send();
                         } else {
                             $record->update([
-                                'payment_status' => \App\PurchasePaymentStatus::Pending->value,
+                                'payment_status' => \App\PaymentStatus::Pending->value,
                                 'payment_date' => null,
                             ]);
 
                             $record->documentable->update([
-                                'payment_status' => \App\SalePaymentStatus::Pending->value,
+                                'payment_status' => \App\PaymentStatus::Pending->value,
                             ]);
 
                             Notification::make('paid')
-                                ->title('Invoice paid')
-                                ->body('There are payments due.')
+                                ->title('Paid')
+                                ->body('There are still payments due for that invoice.')
                                 ->info()
                                 ->send();
                         }
@@ -102,14 +104,17 @@ class ViewDocument extends ViewRecord
                     ->modalWidth(MaxWidth::ExtraSmall)
                     ->modalHeading('Invoice')
                     ->modalSubmitActionLabel('Download')
+                    ->modalFooterActionsAlignment(Alignment::Center)
                     ->form([
                         Forms\Components\Select::make('format')
-                            ->options(\Spatie\LaravelPdf\Enums\Format::class)
-                            ->default(\Spatie\LaravelPdf\Enums\Format::A4->value)
+                            ->options(\App\PaperFormat::class)                            
+                            ->default(\App\PaperFormat::A4->value)
+                            ->searchable()
                             ->required(),
                         Forms\Components\Select::make('orientation')
-                            ->options(\Spatie\LaravelPdf\Enums\Orientation::class)
-                            ->default(\Spatie\LaravelPdf\Enums\Orientation::Portrait->value)
+                            ->options(\App\PaperOrientation::class)                            
+                            ->default(\App\PaperOrientation::Portrait->value)
+                            ->searchable()
                             ->required(),
                     ])
                     ->action(function (array $data) use ($record) {
@@ -136,16 +141,18 @@ class ViewDocument extends ViewRecord
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color(Color::Emerald)
                 ->modalWidth(MaxWidth::ExtraSmall)
-                ->modalHeading('Invoice')
+                ->modalHeading('Receipt')
                 ->modalSubmitActionLabel('Download')
                 ->form([
                     Forms\Components\Select::make('format')
-                        ->options(\Spatie\LaravelPdf\Enums\Format::class)
-                        ->default(\Spatie\LaravelPdf\Enums\Format::A4->value)
+                        ->options(\App\PaperFormat::class)                        
+                        ->default(\App\PaperFormat::A4->value)
+                        ->searchable()
                         ->required(),
                     Forms\Components\Select::make('orientation')
-                        ->options(\Spatie\LaravelPdf\Enums\Orientation::class)
-                        ->default(\Spatie\LaravelPdf\Enums\Orientation::Portrait->value)
+                        ->options(\App\PaperOrientation::class)                        
+                        ->default(\App\PaperOrientation::Portrait->value)
+                        ->searchable()
                         ->required(),
                 ])
                 ->action(function (array $data) use ($record) {

@@ -3,7 +3,7 @@
 namespace App\Filament\Admin\Resources\SupplierResource\Pages;
 
 use App\Filament\Admin\Resources\SupplierResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\Pages\CreateRecord;
 
 class CreateSupplier extends CreateRecord
 {

@@ -14,7 +14,7 @@ class PharmacyScope implements Scope
     public function apply(Builder $builder, Model $model): void
     {
         if (filament()->auth()->check()) {
-            if (filament()->auth()->user()->is_admin) {
+            if (filament()->auth()->user()->isAdmin()) {
                 $builder->where('user_id', filament()->auth()->id());
             } else {
                 $builder->where('user_id', filament()->auth()->user()->user_id);

@@ -19,9 +19,10 @@ return new class extends Migration
             $table->morphs('documentable');
             $table->timestamp('payment_date', 6)->nullable()->default(null);
             $table->enum('payment_status', [
-                'pending',
-                'paid',
                 'overdue',
+                'paid',
+                'pending',
+                'refunded',
             ]);
             $table->enum('type', ['invoice', 'receipt']);
             $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();

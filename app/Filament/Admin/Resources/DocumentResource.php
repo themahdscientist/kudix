@@ -23,7 +23,9 @@ class DocumentResource extends Resource
 {
     protected static ?string $model = Document::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document';
+
+    protected static ?string $activeNavigationIcon = 'heroicon-s-document';
 
     public static function form(Form $form): Form
     {
@@ -94,7 +96,7 @@ class DocumentResource extends Resource
                                 $sale = Sale::query()->find($state['documentable_id'])->load('document');
                                 $status = false;
 
-                                if ($sale->document()->where('type', 'invoice')->exists() || $sale->tendered >= $sale->total_cost || $sale->payment_status === \App\SalePaymentStatus::Paid->value) {
+                                if ($sale->document()->where('type', 'invoice')->exists() || $sale->tendered >= $sale->total_cost || $sale->payment_status === \App\PaymentStatus::Paid->value) {
                                     $set('amount', null);
                                     $set('amount_paid', null);
                                     $set('created_at', null);
@@ -132,7 +134,7 @@ class DocumentResource extends Resource
                                 $sale = Sale::query()->find($state['documentable_id'])->load('document');
                                 $status = false;
 
-                                if ($sale->document()->where('type', 'receipt')->exists() || $sale->tendered < $sale->total_cost || $sale->payment_status !== \App\SalePaymentStatus::Paid->value) {
+                                if ($sale->document()->where('type', 'receipt')->exists() || $sale->tendered < $sale->total_cost || $sale->payment_status !== \App\PaymentStatus::Paid->value) {
                                     $set('amount', null);
                                     $set('amount_paid', null);
                                     $set('created_at', null);
@@ -190,7 +192,7 @@ class DocumentResource extends Resource
                     ->disabled()
                     ->dehydrated(),
                 Forms\Components\Select::make('payment_status')
-                    ->options(\App\SalePaymentStatus::class)
+                    ->options(\App\PaymentStatus::class)
                     ->disabled()
                     ->dehydrated()
                     ->required(),
@@ -227,7 +229,7 @@ class DocumentResource extends Resource
                 Tables\Columns\TextColumn::make('due_date')
                     ->date()
                     ->tooltip(function (Document $record): string {
-                        if ($record->payment_status === \App\PurchasePaymentStatus::Paid->value) {
+                        if ($record->payment_status === \App\PaymentStatus::Paid->value) {
                             return 'Paid';
                         }
 
@@ -236,7 +238,7 @@ class DocumentResource extends Resource
                         : ($record->due_date->isToday() ? 'Due today!' : 'Over due!');
                     })
                     ->color(function (Document $record): string {
-                        if ($record->payment_status === \App\PurchasePaymentStatus::Paid->value) {
+                        if ($record->payment_status === \App\PaymentStatus::Paid->value) {
                             return 'success';
                         }
 
@@ -245,7 +247,7 @@ class DocumentResource extends Resource
                         : ($record->due_date->isToday() ? 'warning' : 'danger');
                     })
                     ->icon(function (Document $record): string {
-                        if ($record->payment_status === \App\PurchasePaymentStatus::Paid->value) {
+                        if ($record->payment_status === \App\PaymentStatus::Paid->value) {
                             return 'heroicon-s-check-circle';
                         }
 
@@ -261,9 +263,9 @@ class DocumentResource extends Resource
                     ->placeholder('pending finalization...')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\IconColumn::make('payment_status')
-                    ->icon(fn ($record): string => \App\PurchasePaymentStatus::from($record->payment_status)->getIcon())
-                    ->color(fn ($record): string => \App\PurchasePaymentStatus::from($record->payment_status)->getColor())
-                    ->tooltip(fn ($record): string => \App\PurchasePaymentStatus::from($record->payment_status)->getLabel()),
+                    ->icon(fn ($record): string => \App\PaymentStatus::from($record->payment_status)->getIcon())
+                    ->color(fn ($record): string => \App\PaymentStatus::from($record->payment_status)->getColor())
+                    ->tooltip(fn ($record): string => \App\PaymentStatus::from($record->payment_status)->getLabel()),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
@@ -277,7 +279,7 @@ class DocumentResource extends Resource
                     ->iconButton()
                     ->hidden(function (Document $record) {
                         return $record->type === \App\DocumentType::Receipt->value || $record->amount_paid >= $record->amount
-                        || $record->payment_status === \App\PurchasePaymentStatus::Paid->value;
+                        || $record->payment_status === \App\PaymentStatus::Paid->value || $record->trashed();
                     })
                     ->fillForm(fn (Document $record) => [
                         'amount' => $record->amount,
@@ -307,36 +309,38 @@ class DocumentResource extends Resource
 
                         if ($record->amount_paid === $record->amount) {
                             $record->update([
-                                'payment_status' => \App\PurchasePaymentStatus::Paid->value,
+                                'payment_status' => \App\PaymentStatus::Paid->value,
                                 'payment_date' => now(),
+                                'type' => \App\DocumentType::Receipt->value,
                             ]);
                             $record->documentable->update([
-                                'payment_status' => \App\SalePaymentStatus::Paid->value,
+                                'payment_status' => \App\PaymentStatus::Paid->value,
                             ]);
 
                             Notification::make('cleared')
-                                ->title('Invoice cleared')
-                                ->body('The invoice has been paid out.')
+                                ->title('Cleared')
+                                ->body('The invoice has been cleared out and a receipt was issued.')
                                 ->success()
                                 ->send();
                         } else {
                             $record->update([
-                                'payment_status' => \App\PurchasePaymentStatus::Pending->value,
+                                'payment_status' => \App\PaymentStatus::Pending->value,
                                 'payment_date' => null,
                             ]);
 
                             $record->documentable->update([
-                                'payment_status' => \App\SalePaymentStatus::Pending->value,
+                                'payment_status' => \App\PaymentStatus::Pending->value,
                             ]);
 
                             Notification::make('paid')
-                                ->title('Invoice paid')
-                                ->body('There are payments due.')
+                                ->title('Paid')
+                                ->body('There are still payments due for that invoice.')
                                 ->info()
                                 ->send();
                         }
                     }),
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->hidden(fn (Document $record) => $record->trashed()),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\ForceDeleteAction::make(),
@@ -351,10 +355,17 @@ class DocumentResource extends Resource
                         ->icon('heroicon-s-arrow-path')
                         ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion()
+                        ->hidden(function () {
+                            if (request()->query('tableFilters')) {
+                                return request()->query('tableFilters')['trashed']['value'] === '0';
+                            }
+
+                            return false;
+                        })
                         ->form([
                             Forms\Components\Select::make('payment_status')
-                                ->options(\App\PurchasePaymentStatus::class)
-                                ->default(\App\PurchasePaymentStatus::Pending)
+                                ->options(\App\PaymentStatus::class)
+                                ->default(\App\PaymentStatus::Pending)
                                 ->required(),
                         ])
                         ->action(function (array $data, Collection $records) {
@@ -405,6 +416,6 @@ class DocumentResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ])
-            ->with(['documentable.customer', 'documentable.products']);
+            ->with(['documentable.products']);
     }
 }

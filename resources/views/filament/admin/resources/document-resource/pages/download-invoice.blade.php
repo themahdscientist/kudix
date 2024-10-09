@@ -1,17 +1,27 @@
-<x-filament::section>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <script src="https://cdn.tailwindcss.com/3.4.5"></script>
-    <div class="p-5 space-y-10 relative">
+    <title>Receipt</title>
+</head>
+
+<body>
+    <div class="relative p-5 space-y-10">
         <section class="flex justify-between">
             <h1 class="font-black">Invoice #{{ Str::upper(Str::after($record->document->uuid, '-')) }}
             </h1>
             <div>
                 <div class="space-y-0.5">
-                    <div class="text-end font-bold text-xs">Kudix Inc.</div>
+                    <div class="text-xs font-bold text-end">Kudix Inc.</div>
                     <div class="text-end text-xs w-[35ch] leading-normal">
                         No. 1 Ekwema Crescent Ikenegbu Layout, Owerri Municipal, IM 420628, Nigeria.
                     </div>
                 </div>
-                <div class="text-end font-medium text-xs text-neutral-600 dark:text-neutral-400 mt-2">
+                <div class="mt-2 text-xs font-medium text-end text-neutral-600 dark:text-neutral-400">
                     <span>Issued date: </span>
                     <span>{{$record->document->created_at->format("l, F j, Y")}}</span>
                 </div>
@@ -20,25 +30,25 @@
         <section class="flex items-center justify-between">
             <div>
                 <h2 class="font-black uppercase">bill to</h2>
-                <div class="font-medium text-sm text-neutral-600 dark:text-neutral-400 mt-2">Name:
-                    {{$record->customer?->name ?? 'UNREGISTERED'}}
+                <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">Name:
+                    {{$record->client?->name ?? 'UNREGISTERED'}}
                 </div>
-                <div class="font-medium text-sm text-neutral-600 dark:text-neutral-400 mt-2">
-                    Address: {{$record->customer?->address ?? 'UNREGISTERED'}}</div>
-                <div class="font-medium text-sm text-neutral-600 dark:text-neutral-400 mt-2">
-                    Email: {{$record->customer?->email ?? 'UNREGISTERED'}}</div>
-                <div class="font-medium text-sm text-neutral-600 dark:text-neutral-400 mt-2">
-                    Phone: {{$record->customer?->phone ?? 'UNREGISTERED'}}</div>
+                <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                    Address: {{$record->client?->clientInfo->address ?? 'UNREGISTERED'}}</div>
+                <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                    Email: {{$record->client?->email ?? 'UNREGISTERED'}}</div>
+                <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                    Phone: {{$record->client?->phone ?? 'UNREGISTERED'}}</div>
             </div>
             <div
-                class="absolute flex items-center gap-2 transform-gpu opacity-10 -rotate-45 top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 font-serif font-bold text-8xl text-amber-600">
+                class="absolute flex items-center gap-2 font-serif font-bold -rotate-45 translate-x-1/2 -translate-y-1/2 transform-gpu opacity-10 top-1/2 right-1/2 text-8xl text-amber-600">
                 {{Str::upper($record->payment_status)}} @svg('heroicon-s-minus-circle', 'w-16 h-16')
             </div>
         </section>
         <section class="p-8">
-            <table class="table-fixed min-w-full text-sm border-collapse indent-0">
-                <caption class="mb-4 table-caption">Sales Invoice</caption>
-                <thead class="bg-neutral-300 dark:bg-neutral-700 table-header-group">
+            <table class="min-w-full text-sm border-collapse table-fixed indent-0">
+                <caption class="table-caption mb-4">Sales Invoice</caption>
+                <thead class="table-header-group bg-neutral-300 dark:bg-neutral-700">
                     <tr>
                         <th scope="col" class="tracking-[2px] text-left p-4 uppercase w-1/3">Product</th>
                         <th scope="col" class="tracking-[2px] p-4 uppercase w-[23.33%]">Cost</th>
@@ -52,7 +62,7 @@
                         class="table-row odd:bg-neutral-500 even:bg-neutral-400 dark:odd:bg-neutral-900 dark:even:bg-neutral-800">
                         <th scope="row" class="tracking-[2px] table-cell p-4 text-left w-1/2">
                             <div>{{$product->name}}</div>
-                            <div class="font-medium text-sm text-neutral-700 dark:text-neutral-500">
+                            <div class="text-sm font-medium text-neutral-700 dark:text-neutral-500">
                                 {{$product->description}}
                             </div>
                         </th>
@@ -122,4 +132,6 @@
             </table>
         </section>
     </div>
-</x-filament::section>
+</body>
+
+</html>

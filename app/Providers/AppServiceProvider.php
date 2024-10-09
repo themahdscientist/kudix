@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Filament\Forms;
 use Filament\Tables;
 use Filament\Tables\Actions;
 use Illuminate\Support\ServiceProvider;
@@ -28,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Database\Eloquent\Relations\Relation::enforceMorphMap([
             'purchase' => 'App\Models\Purchase',
             'sale' => 'App\Models\Sale',
+            'user' => 'App\Models\User',
         ]);
 
         Actions\Action::configureUsing(function (Actions\Action $action): void {
@@ -86,5 +88,14 @@ class AppServiceProvider extends ServiceProvider
             $summarizer
                 ->label('');
         });
+
+        Forms\Components\Field::configureUsing(function (Forms\Components\Field $field): void {
+            if ($field instanceof Forms\Components\TextInput || $field instanceof Forms\Components\Textarea) {
+                $field
+                    ->dehydrated(fn (mixed $state) => filled($state))
+                    ->dehydrateStateUsing(fn (mixed $state) => \Illuminate\Support\Str::squish($state));
+            }
+        });
+
     }
 }

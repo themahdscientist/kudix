@@ -3,7 +3,7 @@
 namespace App\Filament\App\Resources\ProductResource\Pages;
 
 use App\Filament\App\Resources\ProductResource;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Resources\Pages\EditRecord;
 
 class EditProduct extends EditRecord
 {

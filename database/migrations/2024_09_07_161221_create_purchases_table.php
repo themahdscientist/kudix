@@ -17,21 +17,22 @@ return new class extends Migration
             $table->timestamp('expected_delivery_date', 6)->useCurrent();
             $table->text('notes')->nullable();
             $table->enum('payment_status', [
-                'pending',
-                'paid',
                 'overdue',
+                'paid',
+                'pending',
+                'refunded',
             ])->default('paid');
             $table->enum('order_status', [
-                'pending',
                 'approved',
-                'shipped',
+                'pending',
                 'received',
+                'shipped',
             ])->default('received');
-            $table->timestamp('received_date', 6)->useCurrent();
+            $table->timestamp('received_date', 6)->nullable()->default(null);
             $table->unsignedInteger('shipping')->default(0);
             $table->foreignId('supplier_id')->nullable()->constrained()->nullOnDelete();
             $table->unsignedInteger('tendered')->default(0);
-            $table->unsignedInteger('total_price')->default(0);
+            $table->unsignedInteger('total_cost')->default(0);
             $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('uuid')->unique();
             $table->float('vat')->default(0.00);
