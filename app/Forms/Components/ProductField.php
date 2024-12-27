@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 
 class ProductField extends Forms\Components\Field
 {
-    public static function getComponent($suppliers = false): array
+    public static function getForm($suppliers = false): array
     {
         $base = [
             Forms\Components\Split::make([
@@ -24,47 +24,10 @@ class ProductField extends Forms\Components\Field
                         ->required()
                         ->maxLength(255)
                         ->unique(ignoreRecord: true),
-                    Forms\Components\Select::make('category')
-                        ->options([
-                            'Over-the-Counter (OTC) Medications' => [
-                                'pain-relievers' => 'Pain relievers',
-                                'cold-and-flu-remedies' => 'Cold and flu remedies',
-                                'allergy-medications' => 'Allergy medications',
-                                'antacids' => 'Antacids',
-                                'vitamins-and-supplements' => 'Vitamins and supplements',
-                                'first-aid-supplies' => 'First aid supplies',
-                            ],
-                            'Prescription Medications' => [
-                                'antibiotics' => 'Antibiotics',
-                                'antidepressants' => 'Antidepressants',
-                                'antihypertensives' => 'Antihypertensives',
-                                'cardiovascular-medications' => 'Cardiovascular medications',
-                                'diabetes-medications' => 'Diabetes medications',
-                                'respiratory-medications' => 'Respiratory medications',
-                                'oncology-medications' => 'Oncology medications',
-                            ],
-                            'Medical Devices' => [
-                                'blood-pressure-monitors' => 'Blood pressure monitors',
-                                'glucose-meters' => 'Glucose meters',
-                                'thermometers' => 'Thermometers',
-                                'nebulizers' => 'Nebulizers',
-                                'hearing-aids' => 'Hearing aids',
-                                'contact-lenses and solutions' => 'Contact lenses and solutions',
-                            ],
-                            'Personal Care Products' => [
-                                'skincare-products' => 'Skincare products',
-                                'haircare-products' => 'Haircare products',
-                                'cosmetics' => 'Cosmetics',
-                                'oral-hygiene-products' => 'Oral hygiene products',
-                                'baby-products' => 'Baby products',
-                            ],
-                            'Other Categories' => [
-                                'homeopathic-remedies' => 'Homeopathic remedies',
-                                'herbal-supplements' => 'Herbal supplements',
-                                'veterinary-products' => 'Veterinary products',
-                                'medical-equipment' => 'Medical equipment',
-                            ],
-                        ])
+                    Forms\Components\Select::make('category_id')
+                        ->relationship('category', 'name')
+                        ->searchable()
+                        ->preload()
                         ->required(),
                     Forms\Components\DatePicker::make('expiry_date')
                         ->required()
@@ -102,7 +65,8 @@ class ProductField extends Forms\Components\Field
                 ->searchable()
                 ->preload()
                 ->columnSpanFull()
-                ->createOptionForm(SupplierField::getComponent());
+                ->createOptionForm(SupplierField::getForm())
+                ->visibleOn('create');
         }
 
         return $base;

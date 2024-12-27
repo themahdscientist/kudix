@@ -25,10 +25,11 @@ class ProductResource extends Resource
 
     protected static ?string $navigationBadgeTooltip = 'The number of viable products (in stock and not expired).';
 
-    public static function getViableProduct(): ?string
+    public static function getViableProductCount(): ?string
     {
         return static::getEloquentQuery()->where(function (Builder $query) {
             $query->whereNot('status', \App\ProductStatus::OutOfStock->value)
+                ->whereNot('status', \App\ProductStatus::Discontinued->value)
                 ->whereDate('expiry_date', '>', now());
         })
             ->count();
@@ -36,18 +37,18 @@ class ProductResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getViableProduct();
+        return static::getViableProductCount();
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        return static::getViableProduct() < 10 ? 'danger' : 'primary';
+        return static::getViableProductCount() < 10 ? 'danger' : 'primary';
     }
 
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(ProductField::getComponent(suppliers: true));
+            ->schema(ProductField::getForm(suppliers: true));
     }
 
     public static function table(Table $table): Table
@@ -56,7 +57,8 @@ class ProductResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('category')
+                Tables\Columns\TextColumn::make('category.name')
+                    ->description(fn (Product $record) => $record->category->description)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('price')
                     ->money('NGN')
@@ -66,7 +68,8 @@ class ProductResource extends Resource
                     ->sortable()
                     ->summarize(Summarizers\Sum::make()->numeric()->prefix('Total stock: ')->suffix(' units')),
                 Tables\Columns\TextColumn::make('description')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('sku')
                     ->label('SKU')
                     ->searchable(),
@@ -74,9 +77,9 @@ class ProductResource extends Resource
                     ->date()
                     ->sortable(),
                 Tables\Columns\IconColumn::make('status')
-                    ->icon(fn ($record): string => \App\ProductStatus::from($record->status)->getIcon())
-                    ->color(fn ($record): string => \App\ProductStatus::from($record->status)->getColor())
-                    ->tooltip(fn ($record): string => \App\ProductStatus::from($record->status)->getLabel()),
+                    ->icon(fn (Product $record): string => \App\ProductStatus::from($record->status)->getIcon())
+                    ->color(fn (Product $record): string => \App\ProductStatus::from($record->status)->getColor())
+                    ->tooltip(fn (Product $record): string => \App\ProductStatus::from($record->status)->getLabel()),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
@@ -119,7 +122,8 @@ class ProductResource extends Resource
         return parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
-            ]);
+            ])
+            ->with('category');
     }
 
     public static function getWidgets(): array

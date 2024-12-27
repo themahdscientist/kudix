@@ -10,13 +10,16 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
+use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class WebsitePanelProvider extends PanelProvider
@@ -33,7 +36,7 @@ class WebsitePanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Website/Pages'), for: 'App\\Filament\\Website\\Pages')
             ->pages([
                 // Pages\Dashboard::class,
-                Index::class
+                Index::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Website/Widgets'), for: 'App\\Filament\\Website\\Widgets')
             ->widgets([
@@ -53,6 +56,10 @@ class WebsitePanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 // Authenticate::class,
-            ]);
+            ])
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): View => view('renderhooks.offline-state'),
+            );
     }
 }

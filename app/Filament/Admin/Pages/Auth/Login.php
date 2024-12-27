@@ -14,9 +14,9 @@ class Login extends BaseLogin
                 Components\Checkbox::make('remember')
                     ->label(__('filament-panels::pages/auth/login.form.remember.label')),
                 Components\Actions::make([
-                    Components\Actions\Action::make('Salesperson?')
+                    Components\Actions\Action::make('Cashier?')
                         ->link()
-                        ->url(filament()->getPanel('app')->getLoginUrl()),
+                        ->url(filament()->getPanel('cashier')->getLoginUrl()),
                 ])
                     ->alignEnd()
                     ->verticallyAlignCenter(),

@@ -2,16 +2,13 @@
 
 namespace App\Filament\Admin\Resources\ProductResource\RelationManagers;
 
-use Filament\Forms;
+use App\Forms\Components\SupplierField;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
-use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class SuppliersRelationManager extends RelationManager
 {
@@ -20,53 +17,7 @@ class SuppliersRelationManager extends RelationManager
     public function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\Split::make([
-                    Forms\Components\Section::make([
-                        Forms\Components\TextInput::make('name')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('email')
-                            ->label('Email address')
-                            ->email()
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true),
-                        PhoneInput::make('phone')
-                            ->label('Phone number')
-                            ->prefixIcon('heroicon-s-phone')
-                            ->defaultCountry('NG')
-                            ->initialCountry('ng')
-                            ->ipLookup(function () {
-                                return rescue(
-                                    fn () => Http::get('https://ipinfo.io', ['token' => env('IPINFO_SECRET')])->json('country'),
-                                    'NG',
-                                    false
-                                );
-                            })
-                            ->strictMode()
-                            ->required(),
-                    ]),
-                    Forms\Components\Section::make([
-                        Forms\Components\TextInput::make('address')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\Select::make('type')
-                            ->options(\App\SupplierType::class)
-                            ->required(),
-                        Forms\Components\TextInput::make('website')
-                            ->prefix('http://')
-                            ->prefixIcon('heroicon-s-globe-alt')
-                            ->formatStateUsing(fn (mixed $state) => Str::replaceStart('http://', '', $state))
-                            ->dehydrateStateUsing(fn (mixed $state) => 'http://'.$state),
-                    ]),
-                ])
-                    ->columnSpanFull(),
-                Forms\Components\Textarea::make('notes')
-                    ->maxLength(65535)
-                    ->rows(1)
-                    ->columnSpanFull(),
-            ]);
+            ->schema(SupplierField::getForm());
     }
 
     public function table(Table $table): Table

@@ -32,7 +32,7 @@ class ClientResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(ClientField::getComponent());
+            ->schema(ClientField::getForm());
     }
 
     public static function table(Table $table): Table

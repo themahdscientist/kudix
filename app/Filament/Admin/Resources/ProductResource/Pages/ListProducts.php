@@ -35,14 +35,31 @@ class ListProducts extends ListRecords
             'all' => Tab::make()
                 ->icon('heroicon-s-sparkles')
                 ->badge(fn () => static::getResource()::getModel()::count()),
+            'viable' => Tab::make()
+                ->modifyQueryUsing(fn (Builder $query) => $query->where(function (Builder $query) {
+                    $query->whereNot('status', \App\ProductStatus::OutOfStock->value)
+                        ->whereNot('status', \App\ProductStatus::Discontinued->value)
+                        ->whereDate('expiry_date', '>', now());
+                }))
+                ->icon('heroicon-s-shield-check')
+                ->badge(fn () => static::getResource()::getModel()::query()->where(function (Builder $query) {
+                    $query->whereNot('status', \App\ProductStatus::OutOfStock->value)
+                        ->whereNot('status', \App\ProductStatus::Discontinued->value)
+                        ->whereDate('expiry_date', '>', now());
+                })->count()),
             'expired' => Tab::make()
                 ->modifyQueryUsing(fn (Builder $query) => $query->whereDate('expiry_date', '<=', now()))
                 ->icon('heroicon-s-trash')
-                ->badge(fn () => static::getResource()::getEloquentQuery()->where('expiry_date', '<=', now())->count()),
+                ->badge(fn () => static::getResource()::getModel()::query()->whereDate('expiry_date', '<=', now())->count()),
             'out-of-stock' => Tab::make()
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', \App\ProductStatus::OutOfStock->value))
                 ->icon('heroicon-s-minus-circle')
-                ->badge(fn () => static::getResource()::getEloquentQuery()->where('status', \App\ProductStatus::OutOfStock->value)->count()),
+                ->badge(fn () => static::getResource()::getModel()::query()->where('status', \App\ProductStatus::OutOfStock->value)->count()),
         ];
+    }
+
+    public function getDefaultActiveTab(): string|int|null
+    {
+        return 'viable';
     }
 }

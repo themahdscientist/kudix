@@ -1,13 +1,18 @@
 # kudix
 
-## issues
+## Issues
 
-- add documentable ID on the invoices and receipts to show which purchase or sale owns this.
-- do not update the inventory until the purchase order status has been set to received. (IN_PROGRESS)
-- downloading pdfs needs to be swift. i implemented laravel/dompdf and removed spatie/laravel-pdf (the latter was very slow at generating pdfs). pdfs are being generated but the styles are not working. one way to fix it is to use a stylesheet you wrote (laraveldaily). but i'm trying to reference the built css and it's still not working.
-- your documents need to differentiate btw themselves. purchases have to have supplier and not client. sales is kinda fine.
-- remove Kudix, Inc., from the header and put the company's address. add ur logo to the bottom left side.
+- add widgets to the dashboard (product, purchases and sales (all time and today and tables), lead products, today's revenue, all time revenue).
+- add a billing route that handles managing customer's subscriptions
+- add a verify route that handles verifying documents in the app.
+- during the initial trial, the debut subscription should start at the trials end date and not immediately.
+- handle one-time initial setup payment for their pharmacy and a recurring payment every subsequent month.
+- add a branded loading indicator for the app. Showcasing the logo during app navigation.
+- setup events/listeners/broadcasters on essential app metrics like stock count, user subscription and trial.
+- handle transfers for the app. users should be able to collect payment from customers and get it into their bank accounts without
+routing via JavaTechnovation's payment handler.
+- verify customer's credential before incorporating the above. this includes bank account numbers and names. KYC.
+- add filter to change the query from weeks to days to years. (metrics stats overview)
 
-### Sleep on it
-<!-- !IMPORTANT -->
-the customer table suppose to be in the users table and not a separate one. because, they'll have to log in to check their stats and stuff.
+-----------------------------
+- add a 3 day trial for all subscription created

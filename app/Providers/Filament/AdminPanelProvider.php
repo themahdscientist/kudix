@@ -2,8 +2,10 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\EnsureUserIsSubscribed;
 use App\Livewire\CompanyInfoComponent;
 use App\Livewire\PersonalInfo;
+use Filament\FontProviders\GoogleFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -36,13 +38,14 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Indigo,
             ])
+            ->font('Parkinsans', provider: GoogleFontProvider::class)
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
             ->pages([])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -60,8 +63,8 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-                // UploadLogo::class,
-            ])
+                EnsureUserIsSubscribed::class,
+            ], true)
             ->plugins([
                 \Jeffgreco13\FilamentBreezy\BreezyCore::make()
                     ->myProfile(slug: 'profile')
@@ -70,31 +73,34 @@ class AdminPanelProvider extends PanelProvider
                         CompanyInfoComponent::class,
                     ])
                     ->enableTwoFactorAuthentication(),
-                // \pxlrbt\FilamentSpotlight\SpotlightPlugin::make(),
                 \Swis\Filament\Backgrounds\FilamentBackgroundsPlugin::make()
                     ->showAttribution(false)
                     ->remember(900)
                     ->imageProvider(\Swis\Filament\Backgrounds\ImageProviders\Triangles::make()),
-                // \Awcodes\Recently\RecentlyPlugin::make(),
                 \Awcodes\LightSwitch\LightSwitchPlugin::make(),
             ])
             ->spa()
-            ->spaUrlExceptions([url('/app/login')])
+            ->spaUrlExceptions([url('/cashier/login')])
             ->unsavedChangesAlerts()
             ->databaseTransactions()
             ->viteTheme('resources/css/filament/admin/theme.css')
-            ->favicon(asset('favicon.ico'))
+            ->favicon(asset('favicon.svg'))
+            ->brandLogo(asset('images/logo-dark.svg'))
+            ->darkModeBrandLogo(asset('images/logo-light.svg'))
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
-                NavigationGroup::make()
-                    ->label('External Stakeholders')
-                    ->icon('heroicon-o-square-3-stack-3d'),
                 NavigationGroup::make()
                     ->label('Business Operations')
                     ->icon('heroicon-o-cursor-arrow-ripple'),
                 NavigationGroup::make()
+                    ->label('External Stakeholders')
+                    ->icon('heroicon-o-square-3-stack-3d'),
+                NavigationGroup::make()
                     ->label('Human Resources')
                     ->icon('heroicon-o-briefcase'),
+                NavigationGroup::make()
+                    ->label('Report Center')
+                    ->icon('heroicon-o-presentation-chart-bar'),
             ]);
     }
 }

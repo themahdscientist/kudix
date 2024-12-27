@@ -30,7 +30,7 @@ class ListClients extends ListRecords
                 )
                 ->icon('heroicon-s-swatch')
                 ->badge(
-                    fn () => static::getResource()::getEloquentQuery()->whereHas('clientInfo', function (Builder $query) {
+                    fn () => static::getResource()::getModel()::query()->whereHas('clientInfo', function (Builder $query) {
                         $query->where('clients.type', \App\ClientType::Customer->value);
                     })
                         ->count()
@@ -43,7 +43,7 @@ class ListClients extends ListRecords
                 )
                 ->icon('heroicon-s-scissors')
                 ->badge(
-                    fn () => static::getResource()::getEloquentQuery()->whereHas('clientInfo', function (Builder $query) {
+                    fn () => static::getResource()::getModel()::query()->whereHas('clientInfo', function (Builder $query) {
                         $query->where('clients.type', \App\ClientType::Patient->value);
                     })
                         ->count()

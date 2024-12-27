@@ -4,7 +4,6 @@ namespace App\Filament\Admin\Pages;
 
 use Filament\Actions\Action;
 use Filament\Actions\StaticAction;
-use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\HtmlString;
@@ -22,8 +21,6 @@ class Dashboard extends \Filament\Pages\Dashboard
 
     public function onboarding(): Action
     {
-        $color = Color::Indigo;
-
         return Action::make('onboarding')
             ->modalIcon('heroicon-s-sparkles')
             ->modalHeading(

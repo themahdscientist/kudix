@@ -9,7 +9,7 @@ use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class SupplierField extends Forms\Components\Field
 {
-    public static function getComponent($products = false): array
+    public static function getForm($products = false): array
     {
         $base = [
             Forms\Components\Split::make([
@@ -23,28 +23,32 @@ class SupplierField extends Forms\Components\Field
                         ->required()
                         ->maxLength(255)
                         ->unique(ignoreRecord: true),
-                    PhoneInput::make('phone')
-                        ->label('Phone number')
-                        ->prefixIcon('heroicon-s-phone')
-                        ->defaultCountry('NG')
-                        ->autoPlaceholder('aggressive')
-                        ->ipLookup(function () {
-                            return rescue(
-                                fn () => Http::get('https://ipinfo.io', ['token' => env('IPINFO_SECRET')])->json('country'),
-                                'NG',
-                                false
-                            );
-                        })
-                        ->strictMode()
-                        ->required(),
+                    Forms\Components\Grid::make()
+                        ->schema([
+                            PhoneInput::make('phone')
+                                ->label('Phone number')
+                                ->prefixIcon('heroicon-s-phone')
+                                ->defaultCountry('NG')
+                                ->autoPlaceholder('aggressive')
+                                ->ipLookup(function () {
+                                    return rescue(
+                                        fn () => Http::get('https://ipinfo.io', ['token' => env('IPINFO_SECRET')])->json('country'),
+                                        'NG',
+                                        false
+                                    );
+                                })
+                                ->strictMode()
+                                ->required(),
+                            Forms\Components\Select::make('type')
+                                ->options(\App\SupplierType::class)
+                                ->searchable()
+                                ->required(),
+                        ]),
                 ]),
                 Forms\Components\Section::make([
                     Forms\Components\TextInput::make('address')
                         ->required()
                         ->maxLength(255),
-                    Forms\Components\Select::make('type')
-                        ->options(\App\SupplierType::class)
-                        ->required(),
                     Forms\Components\TextInput::make('website')
                         ->prefix('http(s)://')
                         ->live(true)
@@ -62,12 +66,11 @@ class SupplierField extends Forms\Components\Field
                             $component->state(Str::replaceStart('https://', '', $state)) :
                             $component->state(Str::replaceStart('http://', '', $state));
                         }),
+                    Forms\Components\Textarea::make('notes')
+                        ->maxLength(65535)
+                        ->rows(1),
                 ]),
             ])
-                ->columnSpanFull(),
-            Forms\Components\Textarea::make('notes')
-                ->maxLength(65535)
-                ->rows(1)
                 ->columnSpanFull(),
         ];
 
@@ -78,7 +81,8 @@ class SupplierField extends Forms\Components\Field
                 ->searchable()
                 ->preload()
                 ->columnSpanFull()
-                ->createOptionForm(ProductField::getComponent());
+                ->createOptionForm(ProductField::getForm())
+                ->visibleOn('create');
         }
 
         return $base;

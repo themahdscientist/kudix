@@ -52,7 +52,6 @@ abstract class Utils
     public static function furnishUser(Model $record, int $role, ?array $data = [])
     {
         $record->country = filament()->auth()->user()->country;
-        $record->is_subscribed = filament()->auth()->user()->is_subscribed;
 
         if ($record instanceof Client) {
             $record->clientInfo()->create($data);

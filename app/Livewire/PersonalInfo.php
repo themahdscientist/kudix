@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use Filament\Forms;
-use Filament\Forms\Form;
 use Jeffgreco13\FilamentBreezy\Livewire\PersonalInfo as BasePersonalInfo;
 
 class PersonalInfo extends BasePersonalInfo

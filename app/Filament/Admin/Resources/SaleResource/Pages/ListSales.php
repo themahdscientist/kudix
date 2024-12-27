@@ -28,11 +28,11 @@ class ListSales extends ListRecords
             'today' => Tab::make()
                 ->modifyQueryUsing(fn (Builder $query) => $query->whereDate('created_at', now()))
                 ->icon('heroicon-s-calendar')
-                ->badge(fn () => static::getResource()::getEloquentQuery()->whereDate('created_at', now())->count()),
+                ->badge(fn () => static::getResource()::getModel()::query()->whereDate('created_at', now())->count()),
             'yesterday' => Tab::make()
                 ->modifyQueryUsing(fn (Builder $query) => $query->whereDate('created_at', now()->subDay()))
                 ->icon('heroicon-s-clock')
-                ->badge(fn () => static::getResource()::getEloquentQuery()->whereDate('created_at', now()->subDay())->count()),
+                ->badge(fn () => static::getResource()::getModel()::query()->whereDate('created_at', now()->subDay())->count()),
         ];
     }
 

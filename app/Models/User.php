@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Traits\Billable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
+use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,9 +17,18 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Jeffgreco13\FilamentBreezy\Traits\TwoFactorAuthenticatable;
 
-class User extends Authenticatable implements FilamentUser, HasAvatar//, MustVerifyEmail
+use function Illuminate\Events\queueable;
+
+class User extends Authenticatable implements FilamentUser, HasAvatar //, MustVerifyEmail
 {
-    use HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
+    use Billable, HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
+
+    protected static function booted()
+    {
+        static::updated(queueable(function (self $user) {
+            return $user->syncPaystackCustomerDetails();
+        }));
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -48,8 +59,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar//, MustVer
     protected function casts(): array
     {
         return [
-            'is_subscribed' => 'boolean',
+            'auth' => AsArrayObject::class,
             'email_verified_at' => 'datetime',
+            'trial_ends_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -108,12 +120,16 @@ class User extends Authenticatable implements FilamentUser, HasAvatar//, MustVer
 
     public function getFilamentAvatarUrl(): ?string
     {
-        return $this->setting->company_logo ? Storage::url('logos/'.$this->setting->company_logo) : null;
+        return cache()->remember("user-{$this->id}-avatar-url", 60, function () {
+            return $this->user_id
+                ? Storage::url('logos/'.$this->query()->find($this->user_id)->setting->company_logo)
+                : ($this->setting->company_logo ? Storage::url('logos/'.$this->setting->company_logo) : null);
+        });
     }
 
     public function isOnBoarded(): bool
     {
-        if (! $this->setting->company_logo) {
+        if (! ($this->setting->company_logo && $this->setting->bank_acc_no && $this->setting->bank_acc_name)) {
             return false;
         }
 

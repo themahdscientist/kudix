@@ -13,7 +13,7 @@ use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class ClientField extends Forms\Components\Field
 {
-    public static function getComponent(): array
+    public static function getForm(): array
     {
         $base = [
             Sidebar::make([
@@ -28,10 +28,6 @@ class ClientField extends Forms\Components\Field
                         ->required()
                         ->maxLength(255)
                         ->unique(ignoreRecord: true),
-                    Forms\Components\TextInput::make('address')
-                        ->required()
-                        ->maxLength(255)
-                        ->columnSpanFull(),
                     PhoneInput::make('phone')
                         ->label('Phone number')
                         ->prefixIcon('heroicon-s-phone')
@@ -53,6 +49,10 @@ class ClientField extends Forms\Components\Field
                         ->rule(Password::default())
                         ->dehydrated(fn (mixed $state) => filled($state))
                         ->dehydrateStateUsing(fn ($state) => Hash::make($state)),
+                    Forms\Components\TextInput::make('client_info.address')
+                        ->required()
+                        ->maxLength(255)
+                        ->columnSpanFull(),
                 ])
                     ->columns(),
             ], [

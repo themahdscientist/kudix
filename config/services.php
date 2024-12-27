@@ -39,4 +39,7 @@ return [
         'api_key' => env('SENDGRID_API_KEY'),
     ],
 
+    'paystack' => [
+        'grace_period' => env('GRACE_PERIOD'),
+    ],
 ];

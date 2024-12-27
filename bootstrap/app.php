@@ -11,7 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->alias([
+            'subscribed' => \App\Http\Middleware\EnsureUserIsSubscribed::class,
+            'filament.auth' => \Filament\Http\Middleware\Authenticate::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

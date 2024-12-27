@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use function Illuminate\Events\queueable;
+
 #[ObservedBy([\App\Observers\PharmacyObserver::class])]
 #[ScopedBy([\App\Models\Scopes\PharmacyScope::class])]
 class Document extends Model
@@ -19,6 +21,13 @@ class Document extends Model
     public function newUniqueId(): string
     {
         return \App\Utils::generateDocumentId();
+    }
+
+    protected static function booted()
+    {
+        static::deleting(queueable(fn (Document $document) => $document->documentable()->delete()));
+        static::restoring(queueable(fn (Document $document) => $document->documentable()->restore()));
+        static::forceDeleting(queueable(fn (Document $document) => $document->documentable()->forceDelete()));
     }
 
     public function casts(): array

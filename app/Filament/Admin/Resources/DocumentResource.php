@@ -3,9 +3,8 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\DocumentResource\Pages;
+use App\Forms\Components\DocumentField;
 use App\Models\Document;
-use App\Models\Purchase;
-use App\Models\Sale;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -27,176 +26,12 @@ class DocumentResource extends Resource
 
     protected static ?string $activeNavigationIcon = 'heroicon-s-document';
 
+    protected static ?string $navigationGroup = 'Report Center';
+
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\Fieldset::make('metadata')
-                    ->label('UUID & Type')
-                    ->schema([
-                        Forms\Components\TextInput::make('uuid')
-                            ->label('')
-                            ->suffixAction(
-                                Forms\Components\Actions\Action::make('regenerate')
-                                    ->icon('heroicon-o-arrow-path')
-                                    ->iconButton()
-                                    ->action(fn (Forms\Set $set) => $set('uuid', \App\Utils::generateDocumentId()))
-                            )
-                            ->default(\App\Utils::generateDocumentId())
-                            ->disabled()
-                            ->dehydrated(fn (string $operation) => $operation === 'create')
-                            ->required()
-                            ->unique(ignoreRecord: true)
-                            ->columnSpanFull(),
-                        Forms\Components\Select::make('type')
-                            ->label('')
-                            ->options(\App\DocumentType::class)
-                            ->default(\App\DocumentType::Invoice->value)
-                            ->disabledOn('edit')
-                            ->live(true)
-                            ->native(false)
-                            ->required()
-                            ->afterStateUpdated(function (Forms\Set $set) {
-                                $set('documentable_type', null);
-                                $set('documentable_id', null);
-                                $set('amount', null);
-                                $set('amount_paid', null);
-                                $set('created_at', null);
-                                $set('payment_status', null);
-                            })
-                            ->columnSpanFull(),
-                    ])
-                    ->columnSpan(1),
-                Forms\Components\MorphToSelect::make('documentable')
-                    ->types([
-                        Forms\Components\MorphToSelect\Type::make(Purchase::class)
-                            ->titleAttribute('uuid'),
-                        Forms\Components\MorphToSelect\Type::make(Sale::class)
-                            ->titleAttribute('uuid'),
-                    ])
-                    ->searchable()
-                    ->preload()
-                    ->live(true)
-                    ->native(false)
-                    ->required()
-                    ->disabledOn('edit')
-                    ->afterStateUpdated(function (mixed $state, Forms\Set $set) {
-                        if ($state['type'] === \App\DocumentType::Invoice->value) {
-                            if ($state['documentable_type'] === 'purchase' && ! is_null($state['documentable_id'])) {
-                                // ! remove the columns if u want relationships to load
-                                $purchase = Purchase::query()->find($state['documentable_id'], [
-                                    'created_at',
-                                    'payment_status',
-                                    'tendered',
-                                    'total_price',
-                                ]);
-                                $set('amount', $purchase->total_price);
-                                $set('amount_paid', $purchase->tendered);
-                            } elseif ($state['documentable_type'] === 'sale' && ! is_null($state['documentable_id'])) {
-                                $sale = Sale::query()->find($state['documentable_id'])->load('document');
-                                $status = false;
-
-                                if ($sale->document()->where('type', 'invoice')->exists() || $sale->tendered >= $sale->total_cost || $sale->payment_status === \App\PaymentStatus::Paid->value) {
-                                    $set('amount', null);
-                                    $set('amount_paid', null);
-                                    $set('created_at', null);
-                                    $set('payment_status', null);
-                                } else {
-                                    $set('amount', $sale->total_cost);
-                                    $set('amount_paid', $sale->tendered);
-                                    $set('created_at', $sale->created_at->toDateTimeString());
-                                    $set('payment_status', $sale->payment_status);
-
-                                    $status = true;
-                                }
-
-                                return Notification::make('status')
-                                    ->title($sale->uuid)
-                                    ->body(fn (): string => $status
-                                    ? 'This sale has no invoice and hasn\'t been paid for. You may proceed.'
-                                    : 'This sale either has an invoice or has already been paid for. You cannot proceed.')
-                                    ->status(fn (): string => $status ? 'success' : 'danger')
-                                    ->persistent()
-                                    ->send();
-                            }
-                        } elseif ($state['type'] === \App\DocumentType::Receipt->value) {
-                            if ($state['documentable_type'] === 'purchase' && ! is_null($state['documentable_id'])) {
-                                // ! remove the columns if u want relationships to load
-                                $purchase = Purchase::query()->find($state['documentable_id'], [
-                                    'created_at',
-                                    'payment_status',
-                                    'tendered',
-                                    'total_price',
-                                ]);
-                                $set('amount', $purchase->total_price);
-                                $set('amount_paid', $purchase->tendered);
-                            } elseif ($state['documentable_type'] === 'sale' && ! is_null($state['documentable_id'])) {
-                                $sale = Sale::query()->find($state['documentable_id'])->load('document');
-                                $status = false;
-
-                                if ($sale->document()->where('type', 'receipt')->exists() || $sale->tendered < $sale->total_cost || $sale->payment_status !== \App\PaymentStatus::Paid->value) {
-                                    $set('amount', null);
-                                    $set('amount_paid', null);
-                                    $set('created_at', null);
-                                    $set('payment_status', null);
-                                } else {
-                                    $set('amount', $sale->total_cost);
-                                    $set('amount_paid', $sale->tendered);
-                                    $set('created_at', $sale->created_at->toDateTimeString());
-                                    $set('payment_date', $sale->updated_at->toDateTimeString());
-                                    $set('payment_status', $sale->payment_status);
-
-                                    $status = true;
-                                }
-
-                                return Notification::make('status')
-                                    ->title($sale->uuid)
-                                    ->body(fn (): string => $status
-                                    ? 'This sale has no receipt and has already been paid for. You may proceed.'
-                                    : 'This sale either has a receipt or hasn\'t been paid for. You cannot proceed.')
-                                    ->status(fn (): string => $status ? 'success' : 'danger')
-                                    ->persistent()
-                                    ->send();
-                            }
-                        }
-                    }),
-                Forms\Components\TextInput::make('amount')
-                    ->numeric()
-                    ->prefix('₦')
-                    ->minValue(1.00)
-                    ->disabled()
-                    ->dehydrated()
-                    ->required(),
-                Forms\Components\TextInput::make('amount_paid')
-                    ->numeric()
-                    ->prefix('₦')
-                    ->minValue(1.00)
-                    ->maxValue(fn (Forms\Get $get) => $get('amount'))
-                    ->disabled()
-                    ->dehydrated()
-                    ->required(),
-                Forms\Components\DateTimePicker::make('created_at')
-                    ->label('Issued date')
-                    ->default(now()->toDateTimeString())
-                    ->disabled()
-                    ->dehydrated()
-                    ->required(),
-                Forms\Components\DatePicker::make('due_date')
-                    ->default(now()->toDateTimeString())
-                    ->minDate(fn (?Document $record, string $operation) => $operation === 'create' ? now()->toDateString() : $record->due_date)
-                    ->required(),
-                Forms\Components\DatePicker::make('payment_date')
-                    ->hintIcon('heroicon-o-question-mark-circle')
-                    ->hintIconTooltip('This is filled when the invoice is paid out or on receipt issuance.')
-                    ->hintColor('info')
-                    ->disabled()
-                    ->dehydrated(),
-                Forms\Components\Select::make('payment_status')
-                    ->options(\App\PaymentStatus::class)
-                    ->disabled()
-                    ->dehydrated()
-                    ->required(),
-            ]);
+            ->schema(DocumentField::getForm());
     }
 
     public static function table(Table $table): Table
@@ -284,7 +119,7 @@ class DocumentResource extends Resource
                     ->fillForm(fn (Document $record) => [
                         'amount' => $record->amount,
                         'amount_paid' => $record->amount_paid,
-                        'amount_due' => $record->amount - $record->amount_paid,
+                        'amount_due' => round($record->amount - $record->amount_paid, 2),
                     ])
                     ->form([
                         Forms\Components\TextInput::make('amount')
@@ -303,7 +138,7 @@ class DocumentResource extends Resource
                         $record->update([
                             'amount_paid' => $record->amount_paid + $data['amount_due'],
                         ]);
-                        $record->documentable->update([
+                        $record->documentable()->update([
                             'tendered' => $record->amount_paid,
                         ]);
 
@@ -313,7 +148,7 @@ class DocumentResource extends Resource
                                 'payment_date' => now(),
                                 'type' => \App\DocumentType::Receipt->value,
                             ]);
-                            $record->documentable->update([
+                            $record->documentable()->update([
                                 'payment_status' => \App\PaymentStatus::Paid->value,
                             ]);
 
@@ -328,7 +163,7 @@ class DocumentResource extends Resource
                                 'payment_date' => null,
                             ]);
 
-                            $record->documentable->update([
+                            $record->documentable()->update([
                                 'payment_status' => \App\PaymentStatus::Pending->value,
                             ]);
 

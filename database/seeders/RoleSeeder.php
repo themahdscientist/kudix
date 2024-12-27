@@ -22,17 +22,17 @@ class RoleSeeder extends Seeder
             [
                 'id' => Role::CASHIER,
                 'name' => 'cashier',
-                'description' => 'Cashier',
+                'description' => 'Cashier/Salesperson',
             ],
             [
                 'id' => Role::DOCTOR,
                 'name' => 'doctor',
-                'description' => 'Doctor',
+                'description' => 'Doctor/Medical Personnel',
             ],
             [
                 'id' => Role::CLIENT,
                 'name' => 'client',
-                'description' => 'Client',
+                'description' => 'Client/Customer/Patient',
             ],
         ];
 

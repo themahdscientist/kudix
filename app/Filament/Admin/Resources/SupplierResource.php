@@ -23,10 +23,15 @@ class SupplierResource extends Resource
 
     protected static ?string $navigationGroup = 'External Stakeholders';
 
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getEloquentQuery()->count();
+    }
+
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(SupplierField::getComponent(products: true));
+            ->schema(SupplierField::getForm(products: true));
     }
 
     public static function table(Table $table): Table
@@ -43,7 +48,8 @@ class SupplierResource extends Resource
                     ->color(fn ($record) => \App\SupplierType::from($record->type)->getColor())
                     ->tooltip(fn ($record) => \App\SupplierType::from($record->type)->getLabel()),
                 Tables\Columns\TextColumn::make('address')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),

@@ -1,5 +1,5 @@
 <?php
-
+// ! deprecated - using paystack miscellaneous api to fetch for country info in the reg form.
 namespace App\Forms\Components;
 
 use Filament\Forms\Components;

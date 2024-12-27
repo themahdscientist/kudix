@@ -3,8 +3,11 @@
 namespace App\Providers;
 
 use Filament\Forms;
+use Filament\Support\Facades\FilamentView;
 use Filament\Tables;
 use Filament\Tables\Actions;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -22,6 +25,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::BODY_START,
+            fn (): ?string => filament()->auth()->check() ?
+            Blade::render('<livewire:trial-countdown />') :
+            null,
+        );
+
         \Illuminate\Support\Facades\DB::connection()->setQueryGrammar(new \App\Database\Query\Grammars\MariaDBGrammar);
 
         \Illuminate\Database\Eloquent\Model::unguard();

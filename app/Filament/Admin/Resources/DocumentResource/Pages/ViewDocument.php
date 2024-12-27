@@ -4,13 +4,19 @@ namespace App\Filament\Admin\Resources\DocumentResource\Pages;
 
 use App\Filament\Admin\Resources\DocumentResource;
 use App\Models\Document;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Color\Color;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\Writer\SvgWriter;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Support\Colors\Color;
-use Filament\Support\Enums\Alignment;
-use Filament\Support\Enums\MaxWidth;
+
+// use Filament\Support\Colors\Color;
+// use Filament\Support\Enums\Alignment;
+// use Filament\Support\Enums\MaxWidth;
 
 class ViewDocument extends ViewRecord
 {
@@ -21,6 +27,25 @@ class ViewDocument extends ViewRecord
         return $this->getRecord()->type === \App\DocumentType::Invoice->value
         ? 'filament.admin.resources.document-resource.pages.view-invoice'
         : 'filament.admin.resources.document-resource.pages.view-receipt';
+    }
+
+    public function getQrCode(): string
+    {
+        return (new Builder(
+            writer: new SvgWriter(),
+            data: $this->getRecord()->uuid,
+            encoding: new Encoding('UTF-8'),
+            errorCorrectionLevel: ErrorCorrectionLevel::High,
+            backgroundColor: new Color(24, 24, 27),
+            foregroundColor: new Color(255, 255, 255),
+            logoPath: 'images/logo-dark.svg',
+            logoResizeToWidth: 25,
+            logoResizeToHeight: 12.5,
+            logoPunchoutBackground: true,
+            size: 100,
+        ))
+            ->build()
+            ->getDataUri();
     }
 
     protected function getHeaderActions(): array
@@ -43,7 +68,7 @@ class ViewDocument extends ViewRecord
                     ->fillForm(fn (Document $record) => [
                         'amount' => $record->amount,
                         'amount_paid' => $record->amount_paid,
-                        'amount_due' => $record->amount - $record->amount_paid,
+                        'amount_due' => round($record->amount - $record->amount_paid, 2),
                     ])
                     ->form([
                         Forms\Components\TextInput::make('amount')
@@ -62,7 +87,7 @@ class ViewDocument extends ViewRecord
                         $record->update([
                             'amount_paid' => $record->amount_paid + $data['amount_due'],
                         ]);
-                        $record->documentable->update([
+                        $record->documentable()->update([
                             'tendered' => $record->amount_paid,
                         ]);
 
@@ -72,7 +97,7 @@ class ViewDocument extends ViewRecord
                                 'payment_date' => now(),
                                 'type' => \App\DocumentType::Receipt->value,
                             ]);
-                            $record->documentable->update([
+                            $record->documentable()->update([
                                 'payment_status' => \App\PaymentStatus::Paid->value,
                             ]);
 
@@ -87,7 +112,7 @@ class ViewDocument extends ViewRecord
                                 'payment_date' => null,
                             ]);
 
-                            $record->documentable->update([
+                            $record->documentable()->update([
                                 'payment_status' => \App\PaymentStatus::Pending->value,
                             ]);
 
@@ -98,35 +123,35 @@ class ViewDocument extends ViewRecord
                                 ->send();
                         }
                     }),
-                Actions\Action::make('download')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color(Color::Emerald)
-                    ->modalWidth(MaxWidth::ExtraSmall)
-                    ->modalHeading('Invoice')
-                    ->modalSubmitActionLabel('Download')
-                    ->modalFooterActionsAlignment(Alignment::Center)
-                    ->form([
-                        Forms\Components\Select::make('format')
-                            ->options(\App\PaperFormat::class)                            
-                            ->default(\App\PaperFormat::A4->value)
-                            ->searchable()
-                            ->required(),
-                        Forms\Components\Select::make('orientation')
-                            ->options(\App\PaperOrientation::class)                            
-                            ->default(\App\PaperOrientation::Portrait->value)
-                            ->searchable()
-                            ->required(),
-                    ])
-                    ->action(function (array $data) use ($record) {
-                        $open = "open('".route('invoice.download', ['record' => $record->documentable, 'format' => $data['format'], 'orientation' => $data['orientation']])."', '_blank').focus()";
-                        $this->js($open);
+                // Actions\Action::make('download')
+                //     ->icon('heroicon-o-arrow-down-tray')
+                //     ->color(Color::Emerald)
+                //     ->modalWidth(MaxWidth::ExtraSmall)
+                //     ->modalHeading('Invoice')
+                //     ->modalSubmitActionLabel('Download')
+                //     ->modalFooterActionsAlignment(Alignment::Center)
+                //     ->form([
+                //         Forms\Components\Select::make('format')
+                //             ->options(\App\PaperFormat::class)
+                //             ->default(\App\PaperFormat::A4->value)
+                //             ->searchable()
+                //             ->required(),
+                //         Forms\Components\Select::make('orientation')
+                //             ->options(\App\PaperOrientation::class)
+                //             ->default(\App\PaperOrientation::Portrait->value)
+                //             ->searchable()
+                //             ->required(),
+                //     ])
+                //     ->action(function (array $data) use ($record) {
+                //         $open = "open('".route('invoice.download', ['record' => $record->documentable, 'format' => $data['format'], 'orientation' => $data['orientation']])."', '_blank').focus()";
+                //         $this->js($open);
 
-                        Notification::make('download')
-                            ->title('Downloaded')
-                            ->icon('heroicon-o-check-circle')
-                            ->success()
-                            ->send();
-                    }),
+                //         Notification::make('download')
+                //             ->title('Downloaded')
+                //             ->icon('heroicon-o-check-circle')
+                //             ->success()
+                //             ->send();
+                //     }),
                 Actions\Action::make('print')
                     ->icon('heroicon-o-printer')
                     ->color('info')
@@ -137,34 +162,34 @@ class ViewDocument extends ViewRecord
         return [
             Actions\EditAction::make()
                 ->color('gray'),
-            Actions\Action::make('download')
-                ->icon('heroicon-o-arrow-down-tray')
-                ->color(Color::Emerald)
-                ->modalWidth(MaxWidth::ExtraSmall)
-                ->modalHeading('Receipt')
-                ->modalSubmitActionLabel('Download')
-                ->form([
-                    Forms\Components\Select::make('format')
-                        ->options(\App\PaperFormat::class)                        
-                        ->default(\App\PaperFormat::A4->value)
-                        ->searchable()
-                        ->required(),
-                    Forms\Components\Select::make('orientation')
-                        ->options(\App\PaperOrientation::class)                        
-                        ->default(\App\PaperOrientation::Portrait->value)
-                        ->searchable()
-                        ->required(),
-                ])
-                ->action(function (array $data) use ($record) {
-                    $open = "open('".route('receipt.download', ['record' => $record->documentable, 'format' => $data['format'], 'orientation' => $data['orientation']])."', '_blank').focus()";
-                    $this->js($open);
+            // Actions\Action::make('download')
+            //     ->icon('heroicon-o-arrow-down-tray')
+            //     ->color(Color::Emerald)
+            //     ->modalWidth(MaxWidth::ExtraSmall)
+            //     ->modalHeading('Receipt')
+            //     ->modalSubmitActionLabel('Download')
+            //     ->form([
+            //         Forms\Components\Select::make('format')
+            //             ->options(\App\PaperFormat::class)
+            //             ->default(\App\PaperFormat::A4->value)
+            //             ->searchable()
+            //             ->required(),
+            //         Forms\Components\Select::make('orientation')
+            //             ->options(\App\PaperOrientation::class)
+            //             ->default(\App\PaperOrientation::Portrait->value)
+            //             ->searchable()
+            //             ->required(),
+            //     ])
+            //     ->action(function (array $data) use ($record) {
+            //         $open = "open('".route('receipt.download', ['record' => $record->documentable, 'format' => $data['format'], 'orientation' => $data['orientation']])."', '_blank').focus()";
+            //         $this->js($open);
 
-                    Notification::make('download')
-                        ->title('Downloaded')
-                        ->icon('heroicon-o-check-circle')
-                        ->success()
-                        ->send();
-                }),
+            //         Notification::make('download')
+            //             ->title('Downloaded')
+            //             ->icon('heroicon-o-check-circle')
+            //             ->success()
+            //             ->send();
+            //     }),
             Actions\Action::make('print')
                 ->icon('heroicon-o-printer')
                 ->color('info')

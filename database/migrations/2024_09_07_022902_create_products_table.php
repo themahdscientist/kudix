@@ -13,37 +13,7 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->enum('category', [
-                'pain-relievers',
-                'cold-and-flu-remedies',
-                'allergy-medications',
-                'antacids',
-                'vitamins-and-supplements',
-                'first-aid-supplies',
-                'antibiotics',
-                'antidepressants',
-                'antihypertensives',
-                'cardiovascular-medications',
-                'diabetes-medications',
-                'respiratory-medications',
-                'oncology-medications',
-                'blood-pressure-monitors',
-                'glucose-meters',
-                'thermometers',
-                'nebulizers',
-                'hearing-aids',
-                'contact-lenses and solutions',
-                'skincare-products',
-                'haircare-products',
-                'cosmetics',
-                'oral-hygiene-products',
-                'baby-products',
-                'homeopathic-remedies',
-                'herbal-supplements',
-                'veterinary-products',
-                'medical-equipment',
-
-            ]);
+            $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete();
             $table->string('description');
             $table->text('dosage')->nullable();
             $table->timestamp('expiry_date', 6)->useCurrent();

@@ -14,26 +14,35 @@
     .fi-topbar,
     .fi-header,
     .fi-sidebar,
-    .fi-sidebar-close-overlay {
+    .fi-sidebar-close-overlay,
+    #countdown-display {
         display: none !important;
     }
 </style>
 @endassets
 @php
+$user = filament()->auth()->user()->load('setting');
 $record = $this->getRecord();
 $fmt = new NumberFormatter(app()->getLocale(), NumberFormatter::CURRENCY);
 @endphp
 <x-filament-panels::page>
     <x-filament::section>
-        <div class="relative p-5 space-y-10">
+        <div class="relative p-5 space-y-10 font-mono">
             <section class="flex justify-between">
-                <h1 class="font-black">Receipt #{{ Str::upper(Str::after($record->uuid, '-')) }}
-                </h1>
+                <div>
+                    <h1>
+                        Receipt: <span class="font-black">{{ Str::upper(Str::after($record->uuid, '-')) }}</span>
+                    </h1>
+                    <h2>
+                        {{ Str::ucfirst($record->documentable_type) }}: <span
+                            class="font-bold">{{ Str::upper(Str::after($record->documentable->uuid, '-')) }}</span>
+                    </h2>
+                </div>
                 <div>
                     <div class="space-y-0.5">
-                        <div class="text-xs font-bold text-end">Kudix Inc.</div>
+                        <div class="text-xs font-bold text-end">{{ $user->setting->company_name }}</div>
                         <div class="text-end text-xs w-[35ch] leading-normal">
-                            No. 1 Ekwema Crescent Ikenegbu Layout, Owerri Municipal, IM 420628, Nigeria.
+                            {{ $user->setting->company_address }}
                         </div>
                     </div>
                     <div class="mt-2 text-xs font-medium text-end text-neutral-600 dark:text-neutral-400">
@@ -43,20 +52,42 @@ $fmt = new NumberFormatter(app()->getLocale(), NumberFormatter::CURRENCY);
                 </div>
             </section>
             <section class="flex items-center justify-between">
+                @if ($record->documentable_type == \App\DocumentableType::Sale->value)
                 <div>
                     <h2 class="font-black uppercase">billed to</h2>
                     <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">Name:
                         {{$record->documentable->client?->name ?? 'UNREGISTERED'}}
                     </div>
                     <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                        Address: {{$record->documentable->client?->clientInfo->address ?? 'UNREGISTERED'}}</div>
+                        Address: {{$record->documentable->client?->clientInfo->address ?? 'UNREGISTERED'}}
+                    </div>
                     <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                        Email: {{$record->documentable->client?->email ?? 'UNREGISTERED'}}</div>
+                        Email: {{$record->documentable->client?->email ?? 'UNREGISTERED'}}
+                    </div>
                     <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                        Phone: {{$record->documentable->client?->phone ?? 'UNREGISTERED'}}</div>
+                        Phone: {{$record->documentable->client?->phone ?? 'UNREGISTERED'}}
+                    </div>
                 </div>
+                @else
+                <div>
+                    <h2 class="font-black uppercase">billed by</h2>
+                    <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">Name:
+                        {{$record->documentable->supplier?->name ?? 'UNREGISTERED'}}
+                    </div>
+                    <div class="mt-2 w-[55ch] text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                        Address: {{$record->documentable->supplier?->address ?? 'UNREGISTERED'}}
+                    </div>
+                    <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                        Email: {{$record->documentable->supplier?->email ?? 'UNREGISTERED'}}
+                    </div>
+                    <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                        Phone: {{$record->documentable->supplier?->phone ?? 'UNREGISTERED'}}
+                    </div>
+                </div>
+                @endif
+                <img src={{ $this->getQrCode() }} alt={{ $record->uuid }}>
                 <div
-                    class="absolute flex items-center gap-2 font-serif font-bold -rotate-45 translate-x-1/2 -translate-y-1/2 transform-gpu opacity-10 top-1/2 right-1/2 text-8xl text-emerald-600">
+                    class="absolute flex items-center gap-2 font-bold -rotate-45 translate-x-1/2 -translate-y-1/2 transform-gpu opacity-10 top-1/2 right-1/2 text-8xl text-emerald-600">
                     {{Str::upper($record->payment_status)}} @svg('heroicon-s-check-badge', 'w-16 h-16')
                 </div>
             </section>
@@ -170,6 +201,10 @@ $fmt = new NumberFormatter(app()->getLocale(), NumberFormatter::CURRENCY);
                         </tr>
                     </tfoot>
                 </table>
+                <img class="h-6 hidden dark:block" src="{{ asset('images/logo-light.svg') }}"
+                    alt="{{ config('app.name') }} logo">
+                <img class="h-6 dark:hidden block" src="{{ asset('images/logo-dark.svg') }}"
+                    alt="{{ config('app.name') }} logo">
             </section>
         </div>
     </x-filament::section>

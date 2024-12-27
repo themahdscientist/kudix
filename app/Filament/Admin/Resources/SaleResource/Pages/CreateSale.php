@@ -68,7 +68,7 @@ class CreateSale extends CreateRecord
             $record->document()->create([
                 'amount' => $record->total_price,
                 'amount_paid' => $record->tendered,
-                'due_date' => $this->form->getState()['due_date'],
+                'due_date' => $this->form->getState()['document']['due_date'],
                 'payment_date' => null,
                 'payment_status' => \App\PaymentStatus::Pending->value,
                 'type' => \App\DocumentType::Invoice->value,

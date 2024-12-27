@@ -2,11 +2,12 @@
 
 namespace App\Filament\Admin\Pages\Auth;
 
-use App\Forms\Components as AppComponents;
 use App\Models\Role;
+use Binkode\Paystack\Support\Miscellaneous;
 use Filament\Actions\StaticAction;
 use Filament\Forms\Components;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Pages\Auth\Register as BaseRegister;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +25,8 @@ class Register extends BaseRegister
 
     public function form(Form $form): Form
     {
+        $countries = $this->getPaystackSupportedCountries();
+
         return $form
             ->schema([
                 Components\Wizard::make([
@@ -43,11 +46,15 @@ class Register extends BaseRegister
                                 ->description('Communication details.')
                                 ->schema([
                                     $this->getEmailFormComponent(),
-                                    AppComponents\LocalizedCountrySelect::make('country'),
+                                    Components\Select::make('country')
+                                        ->options($countries)
+                                        ->searchable()
+                                        ->required(),
                                     PhoneInput::make('phone')
                                         ->label('Phone number')
                                         ->prefixIcon('heroicon-s-phone')
                                         ->defaultCountry('NG')
+                                        ->onlyCountries(array_keys($countries))
                                         ->autoPlaceholder('aggressive')
                                         ->ipLookup(function () {
                                             return rescue(
@@ -94,13 +101,6 @@ class Register extends BaseRegister
             ]);
     }
 
-    protected function mutateFormDataBeforeRegister(array $data): array
-    {
-        $data['is_subscribed'] = false;
-
-        return $data;
-    }
-
     protected function handleRegistration(array $data): Model
     {
         $setting = $data['setting'];
@@ -115,6 +115,15 @@ class Register extends BaseRegister
         return $user;
     }
 
+    protected function afterRegister(): void
+    {
+        Notification::make('success')
+            ->title('Registration Success')
+            ->body('The user has been registered successfully.')
+            ->success()
+            ->send();
+    }
+
     protected function sendEmailVerificationNotification(Model $user): void
     {
         if (! $user instanceof MustVerifyEmail) {
@@ -122,5 +131,28 @@ class Register extends BaseRegister
         }
 
         (new EmailVerificationPrompt)->sendEmailVerificationNotification($user);
+    }
+
+    /**
+     * Fetch Paystack-supported countries.
+     */
+    protected function getPaystackSupportedCountries(): array
+    {
+        return rescue(
+            fn () => collect(Miscellaneous::listCountries()['data'])
+                ->pluck('name', 'iso_code')
+                ->toArray(),
+            function () {
+                Notification::make('error')
+                    ->icon('heroicon-s-signal-slash')
+                    ->title('Offline')
+                    ->body('You\'ve lost internet connectivity.')
+                    ->warning()
+                    ->send();
+
+                return ['NG' => 'Nigeria'];
+            },
+            false
+        );
     }
 }
