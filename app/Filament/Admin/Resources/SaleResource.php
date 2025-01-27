@@ -3,7 +3,7 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\SaleResource\Pages;
-use App\Forms\Components\SaleField;
+use App\Layouts\SaleLayout;
 use App\Models\Sale;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -37,30 +37,30 @@ class SaleResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(SaleField::getForm());
+            ->schema(SaleLayout::getForm());
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->columns(SaleField::getTable())
+            ->columns(SaleLayout::getTable())
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
                 Tables\Filters\SelectFilter::make('payment_method')
-                    ->options(\App\PaymentMethod::class),
+                    ->options(\App\Enums\PaymentMethod::class),
             ])
             ->actions([
                 Tables\Actions\Action::make('invoice')
                     ->icon('heroicon-s-document-text')
                     ->iconButton()
                     ->color('info')
-                    ->hidden(fn (Sale $record) => $record->tendered >= $record->total_price || $record->payment_status === \App\PaymentStatus::Paid->value || $record->trashed())
+                    ->hidden(fn (Sale $record) => $record->tendered >= $record->total_price || $record->payment_status === \App\Enums\PaymentStatus::Paid->value || $record->trashed())
                     ->url(fn (Sale $record) => DocumentResource::getUrl('view', [$record->document])),
                 Tables\Actions\Action::make('receipt')
                     ->icon('heroicon-s-receipt-percent')
                     ->iconButton()
                     ->color('info')
-                    ->hidden(fn (Sale $record) => $record->tendered < $record->total_price || $record->payment_status !== \App\PaymentStatus::Paid->value || $record->trashed())
+                    ->hidden(fn (Sale $record) => $record->tendered < $record->total_price || $record->payment_status !== \App\Enums\PaymentStatus::Paid->value || $record->trashed())
                     ->url(fn (Sale $record) => DocumentResource::getUrl('view', [$record->document])),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),

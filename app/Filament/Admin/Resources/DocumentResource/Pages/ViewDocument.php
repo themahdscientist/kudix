@@ -24,7 +24,7 @@ class ViewDocument extends ViewRecord
 
     public function getView(): string
     {
-        return $this->getRecord()->type === \App\DocumentType::Invoice->value
+        return $this->getRecord()->type === \App\Enums\DocumentType::Invoice->value
         ? 'filament.admin.resources.document-resource.pages.view-invoice'
         : 'filament.admin.resources.document-resource.pages.view-receipt';
     }
@@ -32,7 +32,7 @@ class ViewDocument extends ViewRecord
     public function getQrCode(): string
     {
         return (new Builder(
-            writer: new SvgWriter(),
+            writer: new SvgWriter,
             data: $this->getRecord()->uuid,
             encoding: new Encoding('UTF-8'),
             errorCorrectionLevel: ErrorCorrectionLevel::High,
@@ -52,7 +52,7 @@ class ViewDocument extends ViewRecord
     {
         $record = $this->getRecord();
 
-        if ($record->type === \App\DocumentType::Invoice->value) {
+        if ($record->type === \App\Enums\DocumentType::Invoice->value) {
             return [
                 Actions\EditAction::make()
                     ->color('gray'),
@@ -63,7 +63,7 @@ class ViewDocument extends ViewRecord
                     ->icon('heroicon-o-credit-card')
                     ->hidden(function (Document $record) {
                         return $record->amount_paid === $record->amount
-                        || $record->payment_status === \App\PaymentStatus::Paid->value;
+                        || $record->payment_status === \App\Enums\PaymentStatus::Paid->value;
                     })
                     ->fillForm(fn (Document $record) => [
                         'amount' => $record->amount,
@@ -93,12 +93,12 @@ class ViewDocument extends ViewRecord
 
                         if ($record->amount_paid === $record->amount) {
                             $record->update([
-                                'payment_status' => \App\PaymentStatus::Paid->value,
+                                'payment_status' => \App\Enums\PaymentStatus::Paid->value,
                                 'payment_date' => now(),
-                                'type' => \App\DocumentType::Receipt->value,
+                                'type' => \App\Enums\DocumentType::Receipt->value,
                             ]);
                             $record->documentable()->update([
-                                'payment_status' => \App\PaymentStatus::Paid->value,
+                                'payment_status' => \App\Enums\PaymentStatus::Paid->value,
                             ]);
 
                             Notification::make('cleared')
@@ -108,12 +108,12 @@ class ViewDocument extends ViewRecord
                                 ->send();
                         } else {
                             $record->update([
-                                'payment_status' => \App\PaymentStatus::Pending->value,
+                                'payment_status' => \App\Enums\PaymentStatus::Pending->value,
                                 'payment_date' => null,
                             ]);
 
                             $record->documentable()->update([
-                                'payment_status' => \App\PaymentStatus::Pending->value,
+                                'payment_status' => \App\Enums\PaymentStatus::Pending->value,
                             ]);
 
                             Notification::make('paid')

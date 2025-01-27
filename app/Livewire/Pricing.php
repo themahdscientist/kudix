@@ -2,21 +2,34 @@
 
 namespace App\Livewire;
 
+use App\Models\User;
 use Binkode\Paystack\Support\Plan;
+use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
+use DanHarrin\LivewireRateLimiting\WithRateLimiting;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use NumberFormatter;
 
+#[Lazy]
 #[Title('Pricing')]
 class Pricing extends Component
 {
-    public array $res;
+    use WithRateLimiting;
 
     public array $plans;
 
-    public $selectedPlan;
+    public string $interval;
+
+    public array $filteredPlans;
+
+    public array $selectedPlan;
+
+    public ?string $recommendedPlan;
 
     public array $features;
 
@@ -43,7 +56,7 @@ class Pricing extends Component
             'Role-based access controls',
             'Regular system updates',
         ],
-        'professional' => [
+        'growth' => [
             'Up to 3 user accounts',
             'Standard analytics & reporting',
             'Basic integrations',
@@ -51,7 +64,7 @@ class Pricing extends Component
             'Cloud data backup',
             'Access to mobile app',
         ],
-        'standard' => [
+        'starter' => [
             'Only one core account',
             'Basic analytics',
             'Access to core features',
@@ -63,13 +76,43 @@ class Pricing extends Component
 
     public function mount()
     {
-        $this->res = rescue(fn () => Plan::list(), ['status' => false]);
+        if (is_null(Cache::get('plans'))) {
+            $res = rescue(fn () => Plan::list(), ['status' => false]);
 
-        if ($this->res['status']) {
-            $this->plans = array_reverse($this->res['data']);
+            // Only save to cache if there are valid plans
+            if ($res['status'] && ! empty($res['data'])) {
+                Cache::put('plans', $res, now()->addMonths(3));
+            }
+        } else {
+            $cachedPlans = Cache::get('plans');
 
-            $this->selectedPlan = $this->plans[0] ?? null;
-            $this->features = $this->planFeatures[strtolower($this->selectedPlan['name'])] ?? [];
+            // Refresh cache if the current one is invalid or empty
+            if (! $cachedPlans['status'] || empty($cachedPlans['data'])) {
+                Cache::forget('plans');
+                $res = rescue(fn () => Plan::list(), ['status' => false]);
+
+                if ($res['status'] && ! empty($res['data'])) {
+                    Cache::put('plans', $res, now()->addMonths(3));
+                }
+            } else {
+                $res = $cachedPlans;
+            }
+        }
+
+        if (isset($res) && $res['status'] && ! empty($res['data'])) {
+            $this->plans = collect($res['data'])->groupBy('interval')->toArray() ?? null;
+
+            $this->interval = 'monthly';
+
+            // $this->selectedPlan = $this->plans[1] ?? null;
+
+            // $this->recommendedPlan = $this->selectedPlan['name'] ?? 'No plan available';
+
+            // $this->features = $this->selectedPlan
+            //     ? $this->planFeatures[strtolower($this->selectedPlan['name'])] ?? []
+            //     : [];
+
+            return;
         }
     }
 
@@ -84,24 +127,46 @@ class Pricing extends Component
         $this->features = $this->planFeatures[strtolower($this->selectedPlan['name'])] ?? [];
     }
 
+    public function setInterval($interval)
+    {
+        $this->interval = $interval;
+        $this->filteredPlans = $this->plans[$interval];
+    }
+
     public function subscribe($plan)
     {
+        try {
+            $this->rateLimit(5);
+        } catch (TooManyRequestsException $exception) {
+            \App\Utils::getRateLimitedNotification($exception)->send();
+
+            return null;
+        }
+
         if (! filament()->auth()->check()) {
             return $this->redirectRoute('filament.admin.auth.login');
         }
 
         if (! empty($plan)) {
-            filament()->auth()->user()->subToPlan($plan);
+            $user = filament()->auth()->user()->subToPlan($plan);
 
-            return;
+            if ($user instanceof User) {
+                Notification::make('success')
+                    ->title('Subscription success')
+                    ->body(Str::markdown('**Payment verification complete**. Re-routing to dashboard.'))
+                    ->success()
+                    ->send();
+
+                return $this->redirectIntended(route('filament.admin.pages.dashboard'), true);
+            } else {
+                Notification::make('error')
+                    ->title('Offline')
+                    ->body(Str::markdown('**Connect to the internet**, refresh the browser, and retry.'))
+                    ->persistent()
+                    ->icon('heroicon-s-signal-slash')
+                    ->warning()
+                    ->send();
+            }
         }
-
-        Notification::make('error')
-            ->title('Offline')
-            ->body(Str::markdown('**Connect to the internet**, refresh the browser, and retry.'))
-            ->persistent()
-            ->icon('heroicon-s-signal-slash')
-            ->warning()
-            ->send();
     }
 }

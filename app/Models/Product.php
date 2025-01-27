@@ -60,9 +60,9 @@ class Product extends Model
         $this->quantity = $this->productPurchases()->sum('quantity') - $this->productSales()->sum('quantity');
 
         if ($this->quantity > 0) {
-            $this->status = \App\ProductStatus::InStock->value;
+            $this->status = \App\Enums\ProductStatus::InStock->value;
         } else {
-            $this->status = \App\ProductStatus::OutOfStock->value;
+            $this->status = \App\Enums\ProductStatus::OutOfStock->value;
         }
 
         $this->saveQuietly();
@@ -74,9 +74,9 @@ class Product extends Model
         $this->quantity += $productPurchase->last_receive_quantity;
 
         if ($this->quantity > 0) {
-            $this->status = \App\ProductStatus::InStock->value;
+            $this->status = \App\Enums\ProductStatus::InStock->value;
         } else {
-            $this->status = \App\ProductStatus::OutOfStock->value;
+            $this->status = \App\Enums\ProductStatus::OutOfStock->value;
         }
 
         $this->saveQuietly();

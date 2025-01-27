@@ -3,8 +3,8 @@
 namespace App\Filament\Cashier\Resources\SaleResource\Pages;
 
 use App\Filament\Cashier\Resources\SaleResource;
+use App\Filament\Resources\Pages\EditRecord;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
 
 class EditSale extends EditRecord
 {

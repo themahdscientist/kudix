@@ -19,7 +19,5 @@ class DatabaseSeeder extends Seeder
         //     'name' => 'TMS',
         //     'email' => 'tms@iamnoel.ai',
         // ]);
-
-        $this->call([RoleSeeder::class, ProductCategorySeeder::class]);
     }
 }

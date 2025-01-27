@@ -3,7 +3,7 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\DoctorResource\Pages;
-use App\Forms\Components\DoctorField;
+use App\Layouts\DoctorLayout;
 use App\Models\Doctor;
 use App\Models\Role;
 use Filament\Forms\Form;
@@ -32,7 +32,7 @@ class DoctorResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(DoctorField::getForm());
+            ->schema(DoctorLayout::getForm());
     }
 
     public static function table(Table $table): Table

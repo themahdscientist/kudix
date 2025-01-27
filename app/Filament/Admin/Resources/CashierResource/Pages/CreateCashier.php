@@ -12,6 +12,6 @@ class CreateCashier extends CreateRecord
 
     protected function afterCreate(): void
     {
-        \App\Utils::furnishUser($this->getRecord(), Role::CASHIER);
+        $this->getRecord()->role()->associate(Role::CASHIER)->save();
     }
 }

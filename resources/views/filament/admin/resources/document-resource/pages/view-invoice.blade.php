@@ -56,16 +56,16 @@ $fmt = new NumberFormatter(app()->getLocale(), NumberFormatter::CURRENCY);
                 <div>
                     <h2 class="font-black uppercase">billed to</h2>
                     <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">Name:
-                        {{$record->documentable->client?->name ?? 'UNREGISTERED'}}
+                        {{$record->documentable->customer?->name ?? 'UNREGISTERED'}}
                     </div>
                     <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                        Address: {{$record->documentable->client?->clientInfo->address ?? 'UNREGISTERED'}}
+                        Address: {{$record->documentable->customer?->customerInfo->address ?? 'UNREGISTERED'}}
                     </div>
                     <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                        Email: {{$record->documentable->client?->email ?? 'UNREGISTERED'}}
+                        Email: {{$record->documentable->customer?->email ?? 'UNREGISTERED'}}
                     </div>
                     <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                        Phone: {{$record->documentable->client?->phone ?? 'UNREGISTERED'}}
+                        Phone: {{$record->documentable->customer?->phone ?? 'UNREGISTERED'}}
                     </div>
                 </div>
                 @else
@@ -94,7 +94,7 @@ $fmt = new NumberFormatter(app()->getLocale(), NumberFormatter::CURRENCY);
             <section class="p-8">
                 <table class="min-w-full text-sm border-collapse table-fixed indent-0">
                     <caption class="table-caption mb-4">
-                        @if ($record->type === \App\DocumentType::Invoice->value && $record->documentable_type ===
+                        @if ($record->type === \App\Enums\DocumentType::Invoice->value && $record->documentable_type ===
                         \App\DocumentableType::Sale->value)
                         Sale Invoice
                         @else
@@ -111,7 +111,7 @@ $fmt = new NumberFormatter(app()->getLocale(), NumberFormatter::CURRENCY);
                     </thead>
                     <tbody>
                         @foreach ($record->documentable->products as $product)
-                        <tr
+                        <tr wire:key="{{$product->id}}"
                             class="table-row odd:bg-neutral-500 even:bg-neutral-400 dark:odd:bg-neutral-900 dark:even:bg-neutral-800">
                             <th scope="row" class="tracking-[2px] table-cell p-4 text-left w-1/2">
                                 <div>{{$product->name}}</div>
@@ -201,9 +201,9 @@ $fmt = new NumberFormatter(app()->getLocale(), NumberFormatter::CURRENCY);
                         </tr>
                     </tfoot>
                 </table>
-                <img class="h-6 hidden dark:block" src="{{ asset('images/logo-light.svg') }}"
+                <img class="hidden h-6 dark:block" src="{{ asset('images/logo-light.svg') }}"
                     alt="{{ config('app.name') }} logo">
-                <img class="h-6 dark:hidden block" src="{{ asset('images/logo-dark.svg') }}"
+                <img class="block h-6 dark:hidden" src="{{ asset('images/logo-dark.svg') }}"
                     alt="{{ config('app.name') }} logo">
             </section>
         </div>

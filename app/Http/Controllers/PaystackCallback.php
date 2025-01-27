@@ -49,7 +49,12 @@ class PaystackCallback extends Controller
                 ->first();
 
             if ($subscription) {
-                $user->persistSubscription($subscription['subscription_code'], $subscription['start']);
+                $options = [
+                    'quantity' => $subscription['quantity'],
+                    'starts_at' => $subscription['start'],
+                ];
+
+                $user->persistSubscription($subscription['subscription_code'], $options)->startTrial(3);
 
                 Notification::make('success')
                     ->title('Subscription success')

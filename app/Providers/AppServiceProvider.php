@@ -7,6 +7,7 @@ use Filament\Support\Facades\FilamentView;
 use Filament\Tables;
 use Filament\Tables\Actions;
 use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,10 +27,39 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         FilamentView::registerRenderHook(
+            PanelsRenderHook::STYLES_AFTER,
+            fn (): ?View => filament()->auth()->check() ?
+            view('render-hook-styles') :
+            null
+        );
+
+        // go back home button
+        // FilamentView::registerRenderHook(
+        //     PanelsRenderHook::SIMPLE_PAGE_START,
+        //     fn (): ?string => ! filament()->auth()->check() ?
+        //     Blade::render('@svg("") <a href="/">Home</a>') :
+        //     null,
+        // );
+
+        FilamentView::registerRenderHook(
             PanelsRenderHook::BODY_START,
-            fn (): ?string => filament()->auth()->check() ?
-            Blade::render('<livewire:trial-countdown />') :
+            fn (): ?View => filament()->auth()->check() ?
+            view('livewire.render-hooks.trial-countdown') :
             null,
+        );
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::BODY_START,
+            fn (): ?View => filament()->auth()->check() ?
+            view('livewire.render-hooks.complete-kyc') :
+            null,
+        );
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::SCRIPTS_AFTER,
+            fn (): ?View => filament()->auth()->check() ?
+            view('render-hook-scripts') :
+            null
         );
 
         \Illuminate\Support\Facades\DB::connection()->setQueryGrammar(new \App\Database\Query\Grammars\MariaDBGrammar);

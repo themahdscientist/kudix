@@ -6,8 +6,6 @@ use Filament\Actions\Action;
 use Filament\Actions\StaticAction;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\MaxWidth;
-use Illuminate\Support\HtmlString;
-use Illuminate\Support\Str;
 
 class Dashboard extends \Filament\Pages\Dashboard
 {
@@ -22,22 +20,20 @@ class Dashboard extends \Filament\Pages\Dashboard
     public function onboarding(): Action
     {
         return Action::make('onboarding')
-            ->modalIcon('heroicon-s-sparkles')
-            ->modalHeading(
-                new HtmlString("Welcome <span class='text-transparent bg-gradient-to-tr from-indigo-700 to-purple-700 dark:bg-gradient-to-r dark:from-indigo-500 dark:to-purple-500 bg-clip-text'>".Str::of(filament()->auth()->user()->name)->explode(' ')[0].'</span>')
-            )
+            ->modalIcon('heroicon-s-check-badge')
+            ->modalHeading('Complete KYC')
             ->modalDescription(
-                'To ensure you get the most out of your subscription plan, consider updating your company\'s information.'
+                'Before you get started, please complete the KYC process to verify your account.'
             )
             ->modalWidth(MaxWidth::Small)
             ->modalFooterActionsAlignment(Alignment::Center)
             ->modalCancelAction(false)
             ->modalSubmitAction(
                 fn (StaticAction $action) => $action
-                    ->label('Update')
-                    ->icon('heroicon-s-arrow-path')
+                    ->label('Verify')
+                    ->icon('heroicon-s-check-badge')
                     ->url(url('admin/profile'))
             )
-            ->visible(fn (): bool => ! filament()->auth()->user()->isOnBoarded());
+            ->visible(fn (): bool => ! filament()->auth()->user()->verified());
     }
 }

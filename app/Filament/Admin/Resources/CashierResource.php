@@ -4,7 +4,7 @@ namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\CashierResource\Pages;
 use App\Filament\Admin\Resources\CashierResource\RelationManagers;
-use App\Forms\Components\CashierField;
+use App\Layouts\CashierLayout;
 use App\Models\Cashier;
 use App\Models\Role;
 use Filament\Forms\Form;
@@ -33,7 +33,7 @@ class CashierResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(CashierField::getForm());
+            ->schema(CashierLayout::getForm());
     }
 
     public static function table(Table $table): Table

@@ -4,7 +4,7 @@ namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\SupplierResource\Pages;
 use App\Filament\Admin\Resources\SupplierResource\RelationManagers;
-use App\Forms\Components\SupplierField;
+use App\Layouts\SupplierLayout;
 use App\Models\Supplier;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -31,7 +31,7 @@ class SupplierResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(SupplierField::getForm(products: true));
+            ->schema(SupplierLayout::getForm(products: true));
     }
 
     public static function table(Table $table): Table
@@ -44,9 +44,9 @@ class SupplierResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone'),
                 Tables\Columns\IconColumn::make('type')
-                    ->icon(fn ($record) => \App\SupplierType::from($record->type)->getIcon())
-                    ->color(fn ($record) => \App\SupplierType::from($record->type)->getColor())
-                    ->tooltip(fn ($record) => \App\SupplierType::from($record->type)->getLabel()),
+                    ->icon(fn ($record) => \App\Enums\SupplierType::from($record->type)->getIcon())
+                    ->color(fn ($record) => \App\Enums\SupplierType::from($record->type)->getColor())
+                    ->tooltip(fn ($record) => \App\Enums\SupplierType::from($record->type)->getLabel()),
                 Tables\Columns\TextColumn::make('address')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -54,7 +54,7 @@ class SupplierResource extends Resource
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
                 Tables\Filters\SelectFilter::make('type')
-                    ->options(\App\SupplierType::class),
+                    ->options(\App\Enums\SupplierType::class),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

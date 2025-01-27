@@ -42,9 +42,9 @@ class Customer extends Model
         ];
     }
 
-    public function customerExt(): HasOne
+    public function customerInfo(): HasOne
     {
-        return $this->hasOne(CustomerExt::class, 'user_id');
+        return $this->hasOne(CustomerInfo::class, 'user_id');
     }
 
     public function role(): BelongsTo

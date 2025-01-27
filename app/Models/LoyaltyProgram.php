@@ -15,8 +15,8 @@ class LoyaltyProgram extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public function clients(): HasMany
+    public function customers(): HasMany
     {
-        return $this->hasMany(Client::class);
+        return $this->hasMany(Customer::class);
     }
 }

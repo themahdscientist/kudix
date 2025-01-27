@@ -2,7 +2,7 @@
 
 namespace App\Filament\Admin\Resources\CashierResource\RelationManagers;
 
-use App\Forms\Components\SaleField;
+use App\Layouts\SaleLayout;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -15,14 +15,14 @@ class SalesRelationManager extends RelationManager
     public function form(Form $form): Form
     {
         return $form
-            ->schema(SaleField::getForm());
+            ->schema(SaleLayout::getForm());
     }
 
     public function table(Table $table): Table
     {
         return $table
             ->recordTitleAttribute('uuid')
-            ->columns(SaleField::getTable())
+            ->columns(SaleLayout::getTable())
             ->filters([
                 //
             ])

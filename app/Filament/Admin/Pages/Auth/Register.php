@@ -2,8 +2,10 @@
 
 namespace App\Filament\Admin\Pages\Auth;
 
+use App\Jobs\FetchIpLocation;
+use App\Jobs\FetchPaystackCountries;
 use App\Models\Role;
-use Binkode\Paystack\Support\Miscellaneous;
+use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Filament\Actions\StaticAction;
 use Filament\Forms\Components;
 use Filament\Forms\Form;
@@ -11,12 +13,37 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Auth\Register as BaseRegister;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Session;
+use Livewire\Attributes\On;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class Register extends BaseRegister
 {
+    protected $listeners = ['refresh' => '$refresh'];
+
     protected ?string $maxWidth = '4xl';
+
+    public ?array $countries = [];
+
+    public ?string $ipLocation;
+
+    public function mount(): void
+    {
+        if (filament()->auth()->check()) {
+            redirect()->intended(filament()->getUrl());
+        }
+
+        $this->countries = $this->getPaystackSupportedCountries();
+
+        $this->ipLocation = $this->getIpLocation();
+
+        $this->callHook('beforeFill');
+
+        $this->form->fill();
+
+        $this->callHook('afterFill');
+    }
 
     protected function getFormActions(): array
     {
@@ -25,44 +52,34 @@ class Register extends BaseRegister
 
     public function form(Form $form): Form
     {
-        $countries = $this->getPaystackSupportedCountries();
-
         return $form
             ->schema([
                 Components\Wizard::make([
                     Components\Wizard\Step::make('User')
                         ->icon('heroicon-s-user')
-                        ->description('Personal details')
                         ->schema([
                             Components\Section::make('Account')
-                                ->description('Login details.')
                                 ->schema([
-                                    $this->getNameFormComponent(),
+                                    $this->getEmailFormComponent(),
                                     $this->getPasswordFormComponent(),
                                     $this->getPasswordConfirmationFormComponent(),
                                 ])
                                 ->columnSpan(1),
                             Components\Section::make('Contact')
-                                ->description('Communication details.')
                                 ->schema([
-                                    $this->getEmailFormComponent(),
-                                    Components\Select::make('country')
-                                        ->options($countries)
+                                    $this->getNameFormComponent(),
+                                    Components\Select::make('setting.iso3166_country_code')
+                                        ->label('Country')
+                                        ->options(fn () => $this->countries)
+                                        ->default(fn () => array_key_first($this->countries))
                                         ->searchable()
                                         ->required(),
                                     PhoneInput::make('phone')
                                         ->label('Phone number')
                                         ->prefixIcon('heroicon-s-phone')
-                                        ->defaultCountry('NG')
-                                        ->onlyCountries(array_keys($countries))
+                                        ->defaultCountry(fn () => $this->ipLocation)
+                                        ->onlyCountries(fn () => array_keys($this->countries))
                                         ->autoPlaceholder('aggressive')
-                                        ->ipLookup(function () {
-                                            return rescue(
-                                                fn () => Http::get('https://ipinfo.io', ['token' => env('IPINFO_SECRET')])->json('country'),
-                                                'NG',
-                                                false
-                                            );
-                                        })
                                         ->strictMode()
                                         ->required(),
                                 ])
@@ -70,9 +87,8 @@ class Register extends BaseRegister
 
                         ])
                         ->columns(),
-                    Components\Wizard\Step::make('Company')
-                        ->icon('heroicon-s-building-office')
-                        ->description('Pharmacy details.')
+                    Components\Wizard\Step::make('Business')
+                        ->icon('heroicon-s-building-storefront')
                         ->schema([
                             Components\Section::make([
                                 Components\TextInput::make('setting.company_name')
@@ -115,11 +131,24 @@ class Register extends BaseRegister
         return $user;
     }
 
+    protected function getRateLimitedNotification(TooManyRequestsException $exception): ?Notification
+    {
+        return Notification::make('throttled')
+            ->title(__('filament-panels::pages/auth/register.notifications.throttled.title', [
+                'seconds' => $exception->secondsUntilAvailable,
+                'minutes' => $exception->minutesUntilAvailable,
+            ]))
+            ->body(array_key_exists('body', __('filament-panels::pages/auth/register.notifications.throttled') ?: []) ? __('filament-panels::pages/auth/register.notifications.throttled.body', [
+                'seconds' => $exception->secondsUntilAvailable,
+                'minutes' => $exception->minutesUntilAvailable,
+            ]) : null)
+            ->danger();
+    }
+
     protected function afterRegister(): void
     {
         Notification::make('success')
-            ->title('Registration Success')
-            ->body('The user has been registered successfully.')
+            ->title('Registration success')
             ->success()
             ->send();
     }
@@ -138,21 +167,53 @@ class Register extends BaseRegister
      */
     protected function getPaystackSupportedCountries(): array
     {
-        return rescue(
-            fn () => collect(Miscellaneous::listCountries()['data'])
-                ->pluck('name', 'iso_code')
-                ->toArray(),
-            function () {
-                Notification::make('error')
-                    ->icon('heroicon-s-signal-slash')
-                    ->title('Offline')
-                    ->body('You\'ve lost internet connectivity.')
-                    ->warning()
-                    ->send();
+        $countries = Cache::get('paystack-countries');
 
-                return ['NG' => 'Nigeria'];
-            },
-            false
-        );
+        if ($countries) {
+            return $countries;
+        }
+
+        FetchPaystackCountries::dispatch();
+
+        return ['NG' => 'Nigeria'];
+    }
+
+    /**
+     * Fetch IP Location.
+     */
+    protected function getIpLocation(): string
+    {
+        $id = Session::id();
+        $country = Cache::get("ip-location-{$id}");
+
+        if ($country) {
+            return $country;
+        }
+
+        FetchIpLocation::dispatch($id);
+
+        return 'NG';
+    }
+
+    #[On('echo:updates,ApiFetched')]
+    public function apiFetched($event)
+    {
+        if ($event['type'] === 'countries') {
+            $this->countries = $event['data'];
+            Notification::make('success')
+                ->title('API Fetched')
+                ->body('Country list updated.')
+                ->success()
+                ->send();
+        } elseif ($event['type'] === 'ip-location') {
+            $this->ipLocation = $event['data'];
+            Notification::make('success')
+                ->title('API Fetched')
+                ->body('Location updated.')
+                ->success()
+                ->send();
+        }
+
+        $this->dispatch('refresh');
     }
 }

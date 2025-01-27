@@ -2,9 +2,12 @@
 
 namespace App;
 
-use App\Models\Client;
+use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+
+use function Livewire\Volt\title;
 
 abstract class Utils
 {
@@ -49,14 +52,14 @@ abstract class Utils
         return env('APP_DOCUMENT_PREFIX').'-'.now()->format('ymd').'_'.Str::upper(Str::random(5));
     }
 
-    public static function furnishUser(Model $record, int $role, ?array $data = [])
+    public static function getRateLimitedNotification(TooManyRequestsException $exception): ?Notification
     {
-        $record->country = filament()->auth()->user()->country;
-
-        if ($record instanceof Client) {
-            $record->clientInfo()->create($data);
-        }
-
-        $record->role()->associate($role)->save();
+        return Notification::make('rate_limit')
+            ->title('Too many failed requests')
+            ->body(array_key_exists('body', __('filament-panels::pages/auth/login.notifications.throttled') ?: []) ? __('filament-panels::pages/auth/login.notifications.throttled.body', [
+                'seconds' => $exception->secondsUntilAvailable,
+                'minutes' => $exception->minutesUntilAvailable,
+            ]) : null)
+            ->danger();
     }
 }

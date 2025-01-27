@@ -5,7 +5,7 @@ namespace App\Filament\Admin\Resources;
 use App\Filament\Admin\Resources\ProductResource\Pages;
 use App\Filament\Admin\Resources\ProductResource\RelationManagers;
 use App\Filament\Admin\Resources\ProductResource\Widgets;
-use App\Forms\Components\ProductField;
+use App\Layouts\ProductLayout;
 use App\Models\Product;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -28,8 +28,8 @@ class ProductResource extends Resource
     public static function getViableProductCount(): ?string
     {
         return static::getEloquentQuery()->where(function (Builder $query) {
-            $query->whereNot('status', \App\ProductStatus::OutOfStock->value)
-                ->whereNot('status', \App\ProductStatus::Discontinued->value)
+            $query->whereNot('status', \App\Enums\ProductStatus::OutOfStock->value)
+                ->whereNot('status', \App\Enums\ProductStatus::Discontinued->value)
                 ->whereDate('expiry_date', '>', now());
         })
             ->count();
@@ -48,7 +48,7 @@ class ProductResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(ProductField::getForm(suppliers: true));
+            ->schema(ProductLayout::getForm(suppliers: true));
     }
 
     public static function table(Table $table): Table
@@ -77,14 +77,14 @@ class ProductResource extends Resource
                     ->date()
                     ->sortable(),
                 Tables\Columns\IconColumn::make('status')
-                    ->icon(fn (Product $record): string => \App\ProductStatus::from($record->status)->getIcon())
-                    ->color(fn (Product $record): string => \App\ProductStatus::from($record->status)->getColor())
-                    ->tooltip(fn (Product $record): string => \App\ProductStatus::from($record->status)->getLabel()),
+                    ->icon(fn (Product $record): string => \App\Enums\ProductStatus::from($record->status)->getIcon())
+                    ->color(fn (Product $record): string => \App\Enums\ProductStatus::from($record->status)->getColor())
+                    ->tooltip(fn (Product $record): string => \App\Enums\ProductStatus::from($record->status)->getLabel()),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
                 Tables\Filters\SelectFilter::make('status')
-                    ->options(\App\ProductStatus::class),
+                    ->options(\App\Enums\ProductStatus::class),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

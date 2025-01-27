@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Models\User;
 use Binkode\Paystack\Support\Subscription;
 use Binkode\Paystack\Support\Transaction;
 use Filament\Notifications\Notification;
@@ -43,7 +44,7 @@ trait ManagesSubscriptions
      */
     public function hasSubscription(): bool
     {
-        return $this->subscription() !== null;
+        return ! is_null($this->subscription());
     }
 
     public function getSubscription(string $subscription_code): ?array
@@ -85,6 +86,8 @@ trait ManagesSubscriptions
         $options = [
             'customer' => $this->customer_code,
             'plan' => $plan_code,
+            'authorization' => $this->getAuth(),
+            'start_date' => now(),
         ];
 
         $res = rescue(
@@ -102,27 +105,38 @@ trait ManagesSubscriptions
             ->persistent()
             ->danger()
             ->send();
+
+        return $res['status'];
     }
 
-    public function persistSubscription(string $subscription_code, ?string $start): \App\Models\Subscription
+    public function persistSubscription(string $subscription_code, array $options = []): User
     {
         $data = $this->getSubscription($subscription_code);
 
         if (! empty($data) && ! is_null($data)) {
-            return $this->subscriptions()->updateOrCreate([
+            $this->subscriptions()->updateOrCreate([
                 'subscription_code' => $data['subscription_code'],
             ], [
                 'amount' => $data['amount'],
                 'ends_at' => isset($data['next_payment_date']) ? now()->parse($data['next_payment_date'])->format('Y-m-d H:i:s') : null,
                 'plan_code' => $data['plan']['plan_code'],
-                'starts_at' => now()->parse($start ?? $data['createdAt'])->format('Y-m-d H:i:s'),
+                'quantity' =>  $options['quantity'] ?? $data['quantity'],
+                'starts_at' => now()->parse($options['starts_at'] ?? $data['createdAt'])->format('Y-m-d H:i:s'),
                 'status' => $data['status'],
+                'trial_ends_at' => now(),
                 'type' => $data['plan']['name'],
             ]);
+
+            return $this;
         }
     }
 
-    public function initializeTransactionForSubscription($plan_code, $callback_url)
+    public function startTrial(int $days): void
+    {
+        $this->subscription()->update(['trial_ends_at' => now()->addDays($days)]);
+    }
+
+    public function initializeTransactionForSubscription($plan_code)
     {
         if ($this->isAuthorized()) {
             return null;
@@ -132,7 +146,7 @@ trait ManagesSubscriptions
             'email' => $this->paystackEmail(),
             'amount' => 50 * 100,
             'plan' => $plan_code,
-            'callback_url' => $callback_url,
+            'callback_url' => route('paystack.callback'),
             'metadata' => [
                 'cancel_action' => route('pricing'),
                 'custom_filters' => [
@@ -151,12 +165,12 @@ trait ManagesSubscriptions
     /**
      * Subscribe the user to a plan.
      */
-    public function subToPlan(string $plan_code, array $options = []): \App\Models\Subscription|\Illuminate\Routing\Redirector|Notification
+    public function subToPlan(string $plan_code, array $options = []): User|\Illuminate\Routing\Redirector|Notification
     {
         // Ensure customer exists
         $this->createAsPaystackCustomer();
 
-        $trx = $this->initializeTransactionForSubscription($plan_code, route('paystack.callback'));
+        $trx = $this->initializeTransactionForSubscription($plan_code);
 
         if (! is_null($trx)) {
             if ($trx['status']) {
@@ -179,7 +193,17 @@ trait ManagesSubscriptions
 
         $sub = $this->createSubscription($plan_code);
 
-        return $this->persistSubscription($sub['subscription_code']);
+        // if ($sub !== false) {
+        //     return $this->persistSubscription($sub['subscription_code']);
+        // }
+        
+        dd($sub);
+        return Notification::make('error')
+            ->title('Subscription error')
+            ->body(Str::markdown('**Internet connectivity lost**.'))
+            ->persistent()
+            ->danger()
+            ->send();
     }
 
     /**

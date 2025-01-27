@@ -2,7 +2,7 @@
 
 namespace App\Filament\Admin\Resources\SupplierResource\RelationManagers;
 
-use App\Forms\Components\ProductField;
+use App\Layouts\ProductLayout;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -17,7 +17,7 @@ class ProductsRelationManager extends RelationManager
     public function form(Form $form): Form
     {
         return $form
-            ->schema(ProductField::getForm());
+            ->schema(ProductLayout::getForm());
     }
 
     public function table(Table $table): Table
@@ -42,14 +42,14 @@ class ProductsRelationManager extends RelationManager
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\IconColumn::make('status')
-                    ->icon(fn ($record): string => \App\ProductStatus::from($record->status)->getIcon())
-                    ->color(fn ($record): string => \App\ProductStatus::from($record->status)->getColor())
-                    ->tooltip(fn ($record): string => \App\ProductStatus::from($record->status)->getLabel()),
+                    ->icon(fn ($record): string => \App\Enums\ProductStatus::from($record->status)->getIcon())
+                    ->color(fn ($record): string => \App\Enums\ProductStatus::from($record->status)->getColor())
+                    ->tooltip(fn ($record): string => \App\Enums\ProductStatus::from($record->status)->getLabel()),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
                 Tables\Filters\SelectFilter::make('status')
-                    ->options(\App\ProductStatus::class),
+                    ->options(\App\Enums\ProductStatus::class),
             ])
             ->headerActions([
                 Tables\Actions\AttachAction::make()

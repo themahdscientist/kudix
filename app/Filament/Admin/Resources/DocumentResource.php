@@ -3,7 +3,7 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\DocumentResource\Pages;
-use App\Forms\Components\DocumentField;
+use App\Layouts\DocumentLayout;
 use App\Models\Document;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -31,7 +31,7 @@ class DocumentResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(DocumentField::getForm());
+            ->schema(DocumentLayout::getForm());
     }
 
     public static function table(Table $table): Table
@@ -64,7 +64,7 @@ class DocumentResource extends Resource
                 Tables\Columns\TextColumn::make('due_date')
                     ->date()
                     ->tooltip(function (Document $record): string {
-                        if ($record->payment_status === \App\PaymentStatus::Paid->value) {
+                        if ($record->payment_status === \App\Enums\PaymentStatus::Paid->value) {
                             return 'Paid';
                         }
 
@@ -73,7 +73,7 @@ class DocumentResource extends Resource
                         : ($record->due_date->isToday() ? 'Due today!' : 'Over due!');
                     })
                     ->color(function (Document $record): string {
-                        if ($record->payment_status === \App\PaymentStatus::Paid->value) {
+                        if ($record->payment_status === \App\Enums\PaymentStatus::Paid->value) {
                             return 'success';
                         }
 
@@ -82,7 +82,7 @@ class DocumentResource extends Resource
                         : ($record->due_date->isToday() ? 'warning' : 'danger');
                     })
                     ->icon(function (Document $record): string {
-                        if ($record->payment_status === \App\PaymentStatus::Paid->value) {
+                        if ($record->payment_status === \App\Enums\PaymentStatus::Paid->value) {
                             return 'heroicon-s-check-circle';
                         }
 
@@ -98,9 +98,9 @@ class DocumentResource extends Resource
                     ->placeholder('pending finalization...')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\IconColumn::make('payment_status')
-                    ->icon(fn ($record): string => \App\PaymentStatus::from($record->payment_status)->getIcon())
-                    ->color(fn ($record): string => \App\PaymentStatus::from($record->payment_status)->getColor())
-                    ->tooltip(fn ($record): string => \App\PaymentStatus::from($record->payment_status)->getLabel()),
+                    ->icon(fn ($record): string => \App\Enums\PaymentStatus::from($record->payment_status)->getIcon())
+                    ->color(fn ($record): string => \App\Enums\PaymentStatus::from($record->payment_status)->getColor())
+                    ->tooltip(fn ($record): string => \App\Enums\PaymentStatus::from($record->payment_status)->getLabel()),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
@@ -113,8 +113,8 @@ class DocumentResource extends Resource
                     ->icon('heroicon-s-credit-card')
                     ->iconButton()
                     ->hidden(function (Document $record) {
-                        return $record->type === \App\DocumentType::Receipt->value || $record->amount_paid >= $record->amount
-                        || $record->payment_status === \App\PaymentStatus::Paid->value || $record->trashed();
+                        return $record->type === \App\Enums\DocumentType::Receipt->value || $record->amount_paid >= $record->amount
+                        || $record->payment_status === \App\Enums\PaymentStatus::Paid->value || $record->trashed();
                     })
                     ->fillForm(fn (Document $record) => [
                         'amount' => $record->amount,
@@ -144,12 +144,12 @@ class DocumentResource extends Resource
 
                         if ($record->amount_paid === $record->amount) {
                             $record->update([
-                                'payment_status' => \App\PaymentStatus::Paid->value,
+                                'payment_status' => \App\Enums\PaymentStatus::Paid->value,
                                 'payment_date' => now(),
-                                'type' => \App\DocumentType::Receipt->value,
+                                'type' => \App\Enums\DocumentType::Receipt->value,
                             ]);
                             $record->documentable()->update([
-                                'payment_status' => \App\PaymentStatus::Paid->value,
+                                'payment_status' => \App\Enums\PaymentStatus::Paid->value,
                             ]);
 
                             Notification::make('cleared')
@@ -159,12 +159,12 @@ class DocumentResource extends Resource
                                 ->send();
                         } else {
                             $record->update([
-                                'payment_status' => \App\PaymentStatus::Pending->value,
+                                'payment_status' => \App\Enums\PaymentStatus::Pending->value,
                                 'payment_date' => null,
                             ]);
 
                             $record->documentable()->update([
-                                'payment_status' => \App\PaymentStatus::Pending->value,
+                                'payment_status' => \App\Enums\PaymentStatus::Pending->value,
                             ]);
 
                             Notification::make('paid')
@@ -199,13 +199,13 @@ class DocumentResource extends Resource
                         })
                         ->form([
                             Forms\Components\Select::make('payment_status')
-                                ->options(\App\PaymentStatus::class)
-                                ->default(\App\PaymentStatus::Pending)
+                                ->options(\App\Enums\PaymentStatus::class)
+                                ->default(\App\Enums\PaymentStatus::Pending)
                                 ->required(),
                         ])
                         ->action(function (array $data, Collection $records) {
                             $records->each(function (Document $record) use ($data) {
-                                if ($record->type === \App\DocumentType::Receipt->value) {
+                                if ($record->type === \App\Enums\DocumentType::Receipt->value) {
                                     return Notification::make('status')
                                         ->title('Ignored')
                                         ->body('A receipt\'s payment status cannot be updated.')

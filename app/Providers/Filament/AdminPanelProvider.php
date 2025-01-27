@@ -3,18 +3,21 @@
 namespace App\Providers\Filament;
 
 use App\Http\Middleware\EnsureUserIsSubscribed;
-use App\Livewire\CompanyInfoComponent;
+use App\Livewire\BusinessInfoComponent;
+use App\Livewire\KycComponent;
+use App\Livewire\OnlineSalesComponent;
 use App\Livewire\PersonalInfo;
 use Filament\FontProviders\GoogleFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Navigation\NavigationGroup;
+use Filament\Notifications\Livewire\Notifications;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Assets\Css;
-use Filament\Support\Colors\Color;
-use Filament\Widgets;
+use Filament\Support\Enums\Alignment;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -27,6 +30,8 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        Notifications::alignment(Alignment::Center);
+
         return $panel
             ->default()
             ->id('admin')
@@ -36,17 +41,18 @@ class AdminPanelProvider extends PanelProvider
             ->passwordReset()
             ->emailVerification(\App\Filament\Admin\Pages\Auth\EmailVerificationPrompt::class)
             ->colors([
-                'primary' => Color::Indigo,
+                'primary' => '#4338CA',
+                'dark' => '#000000',
+                'light' => '#FFFFFF',
+                'secondary' => '#E5E5E5',
+                'accent' => '#FCA311',
             ])
             ->font('Parkinsans', provider: GoogleFontProvider::class)
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
             ->pages([])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
-            ->widgets([
-                Widgets\AccountWidget::class,
-                // Widgets\FilamentInfoWidget::class,
-            ])
+            ->widgets([])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -70,9 +76,11 @@ class AdminPanelProvider extends PanelProvider
                     ->myProfile(slug: 'profile')
                     ->myProfileComponents([
                         'personal_info' => PersonalInfo::class,
-                        CompanyInfoComponent::class,
+                        BusinessInfoComponent::class,
+                        KycComponent::class,
+                        OnlineSalesComponent::class,
                     ])
-                    ->enableTwoFactorAuthentication(),
+                    ->enableTwoFactorAuthentication(force: true),
                 \Swis\Filament\Backgrounds\FilamentBackgroundsPlugin::make()
                     ->showAttribution(false)
                     ->remember(900)
@@ -80,7 +88,10 @@ class AdminPanelProvider extends PanelProvider
                 \Awcodes\LightSwitch\LightSwitchPlugin::make(),
             ])
             ->spa()
-            ->spaUrlExceptions([url('/cashier/login')])
+            ->spaUrlExceptions([
+                url('cashier/login'),
+                url('admin/billing'),
+            ])
             ->unsavedChangesAlerts()
             ->databaseTransactions()
             ->viteTheme('resources/css/filament/admin/theme.css')
@@ -101,6 +112,13 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()
                     ->label('Report Center')
                     ->icon('heroicon-o-presentation-chart-bar'),
+            ])
+            ->userMenuItems([
+                MenuItem::make()
+                    ->label('Billing')
+                    ->url(fn (): string => route('billing.index'))
+                    ->icon('heroicon-s-credit-card')
+                    ->color('success'),
             ]);
     }
 }

@@ -17,7 +17,7 @@ trait ManagesCustomer
     }
 
     /**
-     * Get the first name that should be synced to Paystack.
+     * Get the customer's Paystack code.
      */
     public function paystackId()
     {
@@ -29,7 +29,17 @@ trait ManagesCustomer
      */
     public function paystackFirstName()
     {
-        return explode(' ', $this->name, 2)[0] ?? $this->name;
+        return explode(' ', $this->name)[0] ?? $this->name;
+    }
+
+    /**
+     * Get the middle name that should be synced to Paystack.
+     */
+    public function paystackMiddleName()
+    {
+        $parts = explode(' ', $this->name);
+
+        return count($parts) > 2 ? implode(' ', array_slice($parts, 1, -1)) : '';
     }
 
     /**
@@ -37,7 +47,9 @@ trait ManagesCustomer
      */
     public function paystackLastName()
     {
-        return explode(' ', $this->name, 2)[1] ?? '';
+        $parts = explode(' ', $this->name);
+
+        return $parts[count($parts) - 1] ?? '';
     }
 
     /**
@@ -70,6 +82,14 @@ trait ManagesCustomer
     public function isAuthorized(): bool
     {
         return ! is_null($this->auth['authorization_code'] ?? null);
+    }
+
+    /**
+     * Get the valid Paystack auth code.
+     */
+    public function getAuth()
+    {
+        return $this->auth['authorization_code'];
     }
 
     /**

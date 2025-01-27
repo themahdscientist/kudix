@@ -64,14 +64,14 @@ class CreateSale extends CreateRecord
     protected function afterCreate(): void
     {
         $record = $this->getRecord();
-        if ($record->tendered < $record->total_price || $record->payment_status !== \App\PaymentStatus::Paid->value) {
+        if ($record->tendered < $record->total_price || $record->payment_status !== \App\Enums\PaymentStatus::Paid->value) {
             $record->document()->create([
                 'amount' => $record->total_price,
                 'amount_paid' => $record->tendered,
                 'due_date' => $this->form->getState()['document']['due_date'],
                 'payment_date' => null,
-                'payment_status' => \App\PaymentStatus::Pending->value,
-                'type' => \App\DocumentType::Invoice->value,
+                'payment_status' => \App\Enums\PaymentStatus::Pending->value,
+                'type' => \App\Enums\DocumentType::Invoice->value,
                 'uuid' => \App\Utils::generateDocumentId(),
             ]);
         } else {
@@ -80,8 +80,8 @@ class CreateSale extends CreateRecord
                 'amount_paid' => $record->tendered,
                 'due_date' => now(),
                 'payment_date' => now(),
-                'payment_status' => \App\PaymentStatus::Paid->value,
-                'type' => \App\DocumentType::Receipt->value,
+                'payment_status' => \App\Enums\PaymentStatus::Paid->value,
+                'type' => \App\Enums\DocumentType::Receipt->value,
                 'uuid' => \App\Utils::generateDocumentId(),
             ]);
         }

@@ -33,6 +33,6 @@ class ExpensesChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'line';
+        return 'bar';
     }
 }

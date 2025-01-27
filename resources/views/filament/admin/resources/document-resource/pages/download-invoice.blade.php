@@ -31,14 +31,14 @@
             <div>
                 <h2 class="font-black uppercase">bill to</h2>
                 <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">Name:
-                    {{$record->client?->name ?? 'UNREGISTERED'}}
+                    {{$record->customer?->name ?? 'UNREGISTERED'}}
                 </div>
                 <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                    Address: {{$record->client?->clientInfo->address ?? 'UNREGISTERED'}}</div>
+                    Address: {{$record->customer?->customerInfo->address ?? 'UNREGISTERED'}}</div>
                 <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                    Email: {{$record->client?->email ?? 'UNREGISTERED'}}</div>
+                    Email: {{$record->customer?->email ?? 'UNREGISTERED'}}</div>
                 <div class="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                    Phone: {{$record->client?->phone ?? 'UNREGISTERED'}}</div>
+                    Phone: {{$record->customer?->phone ?? 'UNREGISTERED'}}</div>
             </div>
             <div
                 class="absolute flex items-center gap-2 font-serif font-bold -rotate-45 translate-x-1/2 -translate-y-1/2 transform-gpu opacity-10 top-1/2 right-1/2 text-8xl text-amber-600">

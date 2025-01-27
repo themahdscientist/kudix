@@ -3,7 +3,7 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\PurchaseResource\Pages;
-use App\Forms\Components\PurchaseField;
+use App\Layouts\PurchaseLayout;
 use App\Models\ProductPurchase;
 use App\Models\Purchase;
 use Filament\Forms;
@@ -44,7 +44,7 @@ class PurchaseResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(PurchaseField::getForm());
+            ->schema(PurchaseLayout::getForm());
     }
 
     public static function table(Table $table): Table
@@ -63,9 +63,9 @@ class PurchaseResource extends Resource
                     ->sortable()
                     ->summarize(Summarizers\Sum::make()->numeric()->prefix('Products: ')),
                 Tables\Columns\IconColumn::make('order_status')
-                    ->icon(fn ($record): string => \App\OrderStatus::from($record->order_status)->getIcon())
-                    ->color(fn ($record): string => \App\OrderStatus::from($record->order_status)->getColor())
-                    ->tooltip(fn ($record): string => \App\OrderStatus::from($record->order_status)->getLabel()),
+                    ->icon(fn ($record): string => \App\Enums\OrderStatus::from($record->order_status)->getIcon())
+                    ->color(fn ($record): string => \App\Enums\OrderStatus::from($record->order_status)->getColor())
+                    ->tooltip(fn ($record): string => \App\Enums\OrderStatus::from($record->order_status)->getLabel()),
                 Tables\Columns\TextColumn::make('shipping')
                     ->money('NGN')
                     ->color('success')
@@ -97,9 +97,9 @@ class PurchaseResource extends Resource
                     ->date()
                     ->summarize(Summarizers\Count::make()->numeric()->prefix('Purchases: ')),
                 Tables\Columns\IconColumn::make('payment_status')
-                    ->icon(fn ($record): string => \App\PaymentStatus::from($record->payment_status)->getIcon())
-                    ->color(fn ($record): string => \App\PaymentStatus::from($record->payment_status)->getColor())
-                    ->tooltip(fn ($record): string => \App\PaymentStatus::from($record->payment_status)->getLabel()),
+                    ->icon(fn ($record): string => \App\Enums\PaymentStatus::from($record->payment_status)->getIcon())
+                    ->color(fn ($record): string => \App\Enums\PaymentStatus::from($record->payment_status)->getColor())
+                    ->tooltip(fn ($record): string => \App\Enums\PaymentStatus::from($record->payment_status)->getLabel()),
                 Tables\Columns\TextColumn::make('expected_delivery_date')
                     ->label('Expected delivery date')
                     ->sortable()
@@ -109,9 +109,9 @@ class PurchaseResource extends Resource
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
                 Tables\Filters\SelectFilter::make('order_status')
-                    ->options(\App\OrderStatus::class),
+                    ->options(\App\Enums\OrderStatus::class),
                 Tables\Filters\SelectFilter::make('payment_status')
-                    ->options(\App\PaymentStatus::class),
+                    ->options(\App\Enums\PaymentStatus::class),
             ])
             ->actions([
                 Tables\Actions\Action::make('receive')
@@ -121,7 +121,7 @@ class PurchaseResource extends Resource
                     ->modalSubmitActionLabel('Receive')
                     ->icon('heroicon-s-archive-box-arrow-down')
                     ->iconButton()
-                    ->disabled(fn (Purchase $record) => $record->trashed() || $record->order_status == \App\OrderStatus::Received->value)
+                    ->disabled(fn (Purchase $record) => $record->trashed() || $record->order_status == \App\Enums\OrderStatus::Received->value)
                     ->form(function (Purchase $record): array {
                         return $record->productPurchases->map(function (ProductPurchase $productPurchase) {
                             return Forms\Components\Repeater::make($productPurchase->id)
@@ -174,7 +174,7 @@ class PurchaseResource extends Resource
                             });
 
                             if ($fullyReceived) {
-                                $productPurchase->purchase()->update(['order_status' => \App\OrderStatus::Received->value]);
+                                $productPurchase->purchase()->update(['order_status' => \App\Enums\OrderStatus::Received->value]);
                             }
                         }
 
@@ -188,13 +188,13 @@ class PurchaseResource extends Resource
                     ->icon('heroicon-s-document-text')
                     ->iconButton()
                     ->color('info')
-                    ->hidden(fn (Purchase $record) => $record->tendered >= $record->total_cost || $record->payment_status === \App\PaymentStatus::Paid->value || $record->trashed())
+                    ->hidden(fn (Purchase $record) => $record->tendered >= $record->total_cost || $record->payment_status === \App\Enums\PaymentStatus::Paid->value || $record->trashed())
                     ->url(fn (Purchase $record) => DocumentResource::getUrl('view', [$record->document])),
                 Tables\Actions\Action::make('receipt')
                     ->icon('heroicon-s-receipt-percent')
                     ->iconButton()
                     ->color('info')
-                    ->hidden(fn (Purchase $record) => $record->tendered < $record->total_cost || $record->payment_status !== \App\PaymentStatus::Paid->value || $record->trashed())
+                    ->hidden(fn (Purchase $record) => $record->tendered < $record->total_cost || $record->payment_status !== \App\Enums\PaymentStatus::Paid->value || $record->trashed())
                     ->url(fn (Purchase $record) => DocumentResource::getUrl('view', [$record->document])),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),

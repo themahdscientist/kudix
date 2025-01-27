@@ -45,9 +45,9 @@ class Sale extends Model
         ];
     }
 
-    public function client(): BelongsTo
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(Client::class);
+        return $this->belongsTo(Customer::class);
     }
 
     public function document(): MorphOne

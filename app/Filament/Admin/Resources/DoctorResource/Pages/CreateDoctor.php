@@ -12,6 +12,6 @@ class CreateDoctor extends CreateRecord
 
     protected function afterCreate(): void
     {
-        \App\Utils::furnishUser($this->getRecord(), Role::DOCTOR);
+        $this->getRecord()->role()->associate(Role::DOCTOR)->save();
     }
 }

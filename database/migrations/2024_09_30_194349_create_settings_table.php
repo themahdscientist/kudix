@@ -14,9 +14,12 @@ return new class extends Migration
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
             // Account information
-            $table->text('bank_acc_name')->nullable();
-            $table->string('bank_acc_no')->nullable();
-            $table->string('bank_id')->nullable();
+            $table->text('account_name')->nullable();
+            $table->string('account_number')->nullable();
+            $table->string('bank_code')->nullable();
+            $table->string('bvn')->nullable();
+            $table->string('iso3166_country_code')->nullable();
+            $table->enum('kyc', ['pending', 'verified', 'failed'])->default('pending');
 
             // Company information
             $table->text('company_about');

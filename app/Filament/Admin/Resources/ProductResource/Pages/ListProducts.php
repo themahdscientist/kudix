@@ -37,14 +37,14 @@ class ListProducts extends ListRecords
                 ->badge(fn () => static::getResource()::getModel()::count()),
             'viable' => Tab::make()
                 ->modifyQueryUsing(fn (Builder $query) => $query->where(function (Builder $query) {
-                    $query->whereNot('status', \App\ProductStatus::OutOfStock->value)
-                        ->whereNot('status', \App\ProductStatus::Discontinued->value)
+                    $query->whereNot('status', \App\Enums\ProductStatus::OutOfStock->value)
+                        ->whereNot('status', \App\Enums\ProductStatus::Discontinued->value)
                         ->whereDate('expiry_date', '>', now());
                 }))
                 ->icon('heroicon-s-shield-check')
                 ->badge(fn () => static::getResource()::getModel()::query()->where(function (Builder $query) {
-                    $query->whereNot('status', \App\ProductStatus::OutOfStock->value)
-                        ->whereNot('status', \App\ProductStatus::Discontinued->value)
+                    $query->whereNot('status', \App\Enums\ProductStatus::OutOfStock->value)
+                        ->whereNot('status', \App\Enums\ProductStatus::Discontinued->value)
                         ->whereDate('expiry_date', '>', now());
                 })->count()),
             'expired' => Tab::make()
@@ -52,9 +52,9 @@ class ListProducts extends ListRecords
                 ->icon('heroicon-s-trash')
                 ->badge(fn () => static::getResource()::getModel()::query()->whereDate('expiry_date', '<=', now())->count()),
             'out-of-stock' => Tab::make()
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', \App\ProductStatus::OutOfStock->value))
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', \App\Enums\ProductStatus::OutOfStock->value))
                 ->icon('heroicon-s-minus-circle')
-                ->badge(fn () => static::getResource()::getModel()::query()->where('status', \App\ProductStatus::OutOfStock->value)->count()),
+                ->badge(fn () => static::getResource()::getModel()::query()->where('status', \App\Enums\ProductStatus::OutOfStock->value)->count()),
         ];
     }
 

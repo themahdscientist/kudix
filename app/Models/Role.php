@@ -2,14 +2,36 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Role extends Model
 {
-    use HasFactory;
-    
+    use \Sushi\Sushi;
+
+    protected $rows = [
+        [
+            'id' => self::ADMIN,
+            'name' => 'admin',
+            'description' => 'Administrator',
+        ],
+        [
+            'id' => self::CASHIER,
+            'name' => 'cashier',
+            'description' => 'Cashier/Salesperson',
+        ],
+        [
+            'id' => self::DOCTOR,
+            'name' => 'doctor',
+            'description' => 'Doctor/Medical Personnel',
+        ],
+        [
+            'id' => self::CUSTOMER,
+            'name' => 'customer',
+            'description' => 'Regular/Patient',
+        ],
+    ];
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
@@ -21,5 +43,5 @@ class Role extends Model
 
     const DOCTOR = 3;
 
-    const CLIENT = 4;
+    const CUSTOMER = 4;
 }

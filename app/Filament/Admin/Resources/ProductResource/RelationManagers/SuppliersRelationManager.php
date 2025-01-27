@@ -2,7 +2,7 @@
 
 namespace App\Filament\Admin\Resources\ProductResource\RelationManagers;
 
-use App\Forms\Components\SupplierField;
+use App\Layouts\SupplierLayout;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -17,7 +17,7 @@ class SuppliersRelationManager extends RelationManager
     public function form(Form $form): Form
     {
         return $form
-            ->schema(SupplierField::getForm());
+            ->schema(SupplierLayout::getForm());
     }
 
     public function table(Table $table): Table
@@ -34,9 +34,9 @@ class SuppliersRelationManager extends RelationManager
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone'),
                 Tables\Columns\IconColumn::make('type')
-                    ->icon(fn ($record) => \App\SupplierType::from($record->type)->getIcon())
-                    ->color(fn ($record) => \App\SupplierType::from($record->type)->getColor())
-                    ->tooltip(fn ($record) => \App\SupplierType::from($record->type)->getLabel()),
+                    ->icon(fn ($record) => \App\Enums\SupplierType::from($record->type)->getIcon())
+                    ->color(fn ($record) => \App\Enums\SupplierType::from($record->type)->getColor())
+                    ->tooltip(fn ($record) => \App\Enums\SupplierType::from($record->type)->getLabel()),
                 Tables\Columns\TextColumn::make('address')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -44,7 +44,7 @@ class SuppliersRelationManager extends RelationManager
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
                 Tables\Filters\SelectFilter::make('type')
-                    ->options(\App\SupplierType::class),
+                    ->options(\App\Enums\SupplierType::class),
             ])
             ->headerActions([
                 Tables\Actions\AttachAction::make()
